@@ -4,40 +4,27 @@ import 'package:get/get.dart';
 import 'routes/app_routes.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
+import 'shared/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
-  // Khởi tạo services theo thứ tự: Auth trước, Api sau
   await Get.putAsync<AuthService>(() => AuthService().init());
   await Get.putAsync<ApiService>(() => ApiService().init());
-
-  runApp(const TimeFlowApp());
+  runApp(const TimeWiseApp());
 }
 
-class TimeFlowApp extends StatelessWidget {
-  const TimeFlowApp({super.key});
-
+class TimeWiseApp extends StatelessWidget {
+  const TimeWiseApp({super.key});
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'TimeWise Manager',
+      title: 'TimeWise',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D0D1A),
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF6C63FF),
-          secondary: const Color(0xFF3D5AFE),
-          surface: const Color(0xFF1A1A2E),
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.dark,
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
     );
