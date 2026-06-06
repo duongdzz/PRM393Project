@@ -3,15 +3,23 @@ import 'package:get/get.dart';
 enum TaskStatus   { todo, inProgress, done, cancelled }
 enum TaskPriority { low, medium, high, urgent }
 
+/// Định dạng số phút thành chuỗi gọn: 90 -> "1h30p", 45 -> "45p", 120 -> "2h".
+String formatDuration(int minutes) {
+  if (minutes <= 0) return '0p';
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  if (h == 0) return '${m}p';
+  if (m == 0) return '${h}h';
+  return '${h}h${m}p';
+}
+
 class TaskModel {
   final String id;
   String title;
   String description;
   TaskStatus   status;
   TaskPriority priority;
-  String   category;
   int?     estimatedMinutes;
-  int      actualMinutes;
   DateTime? deadline;
   DateTime  createdAt;
   DateTime  updatedAt;
@@ -20,16 +28,14 @@ class TaskModel {
   TaskModel({
     required this.id,
     required this.title,
-    this.description    = '',
-    this.status         = TaskStatus.todo,
-    this.priority       = TaskPriority.medium,
-    this.category       = '',
+    this.description  = '',
+    this.status       = TaskStatus.todo,
+    this.priority     = TaskPriority.medium,
     this.estimatedMinutes,
-    this.actualMinutes  = 0,
     this.deadline,
     required this.createdAt,
     required this.updatedAt,
-    this.subTasks       = const [],
+    this.subTasks     = const [],
   });
 
   bool get isOverdue =>
@@ -38,19 +44,8 @@ class TaskModel {
           status != TaskStatus.done &&
           status != TaskStatus.cancelled;
 
-  bool get isDueSoon =>
-      deadline != null &&
-          deadline!.difference(DateTime.now()).inHours <= 24 &&
-          !isOverdue;
-
-  double get progressPercent {
-    if (estimatedMinutes == null || estimatedMinutes == 0) return 0;
-    return (actualMinutes / estimatedMinutes!).clamp(0.0, 1.0);
-  }
-
   // Business Rule: không cho done nếu còn sub-task chưa xong
-  bool get canMarkDone =>
-      subTasks.every((s) => s.isDone);
+  bool get canMarkDone => subTasks.every((s) => s.isDone);
 }
 
 class SubTask {
@@ -64,87 +59,15 @@ class SubTask {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class TaskController extends GetxController {
-  final tasks         = <TaskModel>[].obs;
-  final isLoading     = false.obs;
-  final searchQuery   = ''.obs;
-  final filterStatus  = Rx<TaskStatus?>(null);
-  final sortBy        = 'deadline'.obs; // deadline | priority | createdAt
-
-  // ── Filtered & sorted list ────────────────────────────────────────────────
-  List<TaskModel> get filteredTasks {
-    var list = tasks.where((t) {
-      // Không hiển thị cancelled trừ khi lọc rõ ràng
-      if (filterStatus.value == null && t.status == TaskStatus.cancelled) {
-        return false;
-      }
-      if (filterStatus.value != null && t.status != filterStatus.value) {
-        return false;
-      }
-      if (searchQuery.value.isNotEmpty) {
-        return t.title.toLowerCase().contains(searchQuery.value.toLowerCase());
-      }
-      return true;
-    }).toList();
-
-    // Sort
-    switch (sortBy.value) {
-      case 'priority':
-        list.sort((a, b) => b.priority.index.compareTo(a.priority.index));
-        break;
-      case 'createdAt':
-        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        break;
-      default: // deadline
-        list.sort((a, b) {
-          if (a.deadline == null && b.deadline == null) return 0;
-          if (a.deadline == null) return 1;
-          if (b.deadline == null) return -1;
-          return a.deadline!.compareTo(b.deadline!);
-        });
-    }
-
-    // Business Rule: urgent luôn lên đầu
-    list.sort((a, b) {
-      if (a.priority == TaskPriority.urgent && b.priority != TaskPriority.urgent) return -1;
-      if (b.priority == TaskPriority.urgent && a.priority != TaskPriority.urgent) return 1;
-      return 0;
-    });
-
-    return list;
-  }
-
-  List<TaskModel> get todayTasks {
-    final today = DateTime.now();
-    return tasks.where((t) =>
-    t.deadline != null &&
-        t.deadline!.day   == today.day &&
-        t.deadline!.month == today.month &&
-        t.deadline!.year  == today.year &&
-        t.status != TaskStatus.done &&
-        t.status != TaskStatus.cancelled
-    ).toList();
-  }
+  final tasks = <TaskModel>[].obs;
 
   List<TaskModel> get overdueTasks =>
       tasks.where((t) => t.isOverdue).toList();
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────
+  void addTask(TaskModel task) => tasks.add(task);
 
-  void addTask(TaskModel task) {
-    tasks.add(task);
-    // TODO: gọi API POST /api/tasks
-  }
-
-  void updateTask(TaskModel updated) {
-    final i = tasks.indexWhere((t) => t.id == updated.id);
-    if (i != -1) {
-      tasks[i] = updated;
-      tasks.refresh();
-      // TODO: gọi API PUT /api/tasks/{id}
-    }
-  }
-
-  // Business Rule: không cho done nếu còn sub-task chưa xong
+  // Business Rule: không cho done nếu còn sub-task chưa xong.
+  // Trả về null nếu thành công, hoặc thông báo lỗi.
   String? tryMarkDone(String taskId) {
     final task = tasks.firstWhereOrNull((t) => t.id == taskId);
     if (task == null) return 'Task không tồn tại';
@@ -154,70 +77,6 @@ class TaskController extends GetxController {
     task.status = TaskStatus.done;
     task.updatedAt = DateTime.now();
     tasks.refresh();
-    return null; // null = thành công
-  }
-
-  void deleteTask(String taskId) {
-    tasks.removeWhere((t) => t.id == taskId);
-    // TODO: gọi API DELETE /api/tasks/{id}
-  }
-
-  void toggleSubTask(String taskId, String subTaskId) {
-    final task = tasks.firstWhereOrNull((t) => t.id == taskId);
-    if (task == null) return;
-    final sub = task.subTasks.firstWhereOrNull((s) => s.id == subTaskId);
-    if (sub == null) return;
-    sub.isDone = !sub.isDone;
-    task.updatedAt = DateTime.now();
-    tasks.refresh();
-  }
-
-  // ── Mock data (xoá khi có API) ────────────────────────────────────────────
-  @override
-  void onInit() {
-    super.onInit();
-    _loadMockData();
-  }
-
-  void _loadMockData() {
-    final now = DateTime.now();
-    tasks.addAll([
-      TaskModel(
-        id: '1', title: 'Làm báo cáo Flutter',
-        description: 'Viết báo cáo project quản lý thời gian',
-        priority: TaskPriority.urgent,
-        deadline: now.add(const Duration(hours: 3)),
-        estimatedMinutes: 120, actualMinutes: 45,
-        createdAt: now.subtract(const Duration(days: 2)),
-        updatedAt: now,
-        subTasks: [
-          SubTask(id: 's1', title: 'Viết phần mở đầu', isDone: true),
-          SubTask(id: 's2', title: 'Vẽ sơ đồ kiến trúc'),
-          SubTask(id: 's3', title: 'Kết luận'),
-        ],
-      ),
-      TaskModel(
-        id: '2', title: 'Ôn tập GetX State Management',
-        priority: TaskPriority.high,
-        deadline: now.add(const Duration(days: 1)),
-        estimatedMinutes: 60,
-        createdAt: now.subtract(const Duration(days: 1)),
-        updatedAt: now,
-      ),
-      TaskModel(
-        id: '3', title: 'Đọc tài liệu Material You',
-        priority: TaskPriority.medium,
-        deadline: now.add(const Duration(days: 3)),
-        estimatedMinutes: 45,
-        createdAt: now,
-        updatedAt: now,
-      ),
-      TaskModel(
-        id: '4', title: 'Code màn hình Profile',
-        priority: TaskPriority.medium,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    ]);
+    return null;
   }
 }

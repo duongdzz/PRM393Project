@@ -4,12 +4,9 @@ import '../features/auth/login_screen.dart';
 import '../features/home/home_screen.dart';
 
 abstract class AppRoutes {
-  static const splash    = '/';
-  static const login     = '/login';
-  static const home      = '/home';
-  static const profile   = '/profile';
-  static const schedule  = '/schedule';
-  static const report    = '/report';
+  static const splash = '/';
+  static const login  = '/login';
+  static const home   = '/home';
 }
 
 class AppPages {
@@ -27,9 +24,5 @@ class AppPages {
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 400),
     ),
-    // Mở ra khi code xong:
-    // GetPage(name: AppRoutes.profile,  page: () => const ProfileScreen()),
-    // GetPage(name: AppRoutes.schedule, page: () => const ScheduleScreen()),
-    // GetPage(name: AppRoutes.report,   page: () => const ReportScreen()),
   ];
 }

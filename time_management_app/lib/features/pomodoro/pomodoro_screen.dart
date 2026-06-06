@@ -12,7 +12,7 @@ class PomodoroScreen extends StatelessWidget {
     final c = Get.put(PomodoroController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1923),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -153,8 +153,8 @@ class _CircularTimer extends StatelessWidget {
                   controller.timeDisplay,
                   style: const TextStyle(
                     fontSize: 56,
-                    fontWeight: FontWeight.w200,
-                    color: Colors.white,
+                    fontWeight: FontWeight.w300,
+                    color: AppColors.onSurface,
                     letterSpacing: -2,
                     fontFeatures: [FontFeature.tabularFigures()],
                   ),
@@ -179,7 +179,7 @@ class _CircularTimer extends StatelessWidget {
                         ? Icons.pause_rounded
                         : Icons.play_arrow_rounded,
                     key: ValueKey(controller.status.value),
-                    color: Colors.white30,
+                    color: AppColors.tertiary,
                     size: 28,
                   ),
                 ),
@@ -299,7 +299,7 @@ class _TaskInput extends StatelessWidget {
           border: Border.all(
             color: controller.currentTask.value.isNotEmpty
                 ? AppColors.primary.withOpacity(0.4)
-                : Colors.white.withOpacity(0.06),
+                : AppColors.border,
           ),
         ),
         child: Row(
@@ -347,13 +347,13 @@ class _TaskInput extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Chọn công việc',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: AppColors.onSurface, fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             // Mock tasks — sẽ thay bằng TaskController.tasks sau
             ...['Ôn tập Flutter', 'Làm báo cáo', 'Code project', 'Đọc tài liệu'].map(
                   (task) => ListTile(
                 leading: const Icon(Icons.radio_button_unchecked, color: AppColors.primary),
-                title: Text(task, style: const TextStyle(color: Colors.white)),
+                title: Text(task, style: const TextStyle(color: AppColors.onSurface)),
                 onTap: () {
                   controller.setTask(task);
                   Navigator.pop(context);
@@ -471,7 +471,7 @@ class _ControlButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Icon(icon, color: color, size: size * 0.45),
       ),
@@ -492,7 +492,7 @@ class _TodayStats extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -500,7 +500,7 @@ class _TodayStats extends StatelessWidget {
             value: '${controller.todayCompletedSessions}',
             label: 'Phiên hôm nay',
             icon: Icons.local_fire_department_rounded,
-            color: const Color(0xFFFF6B6B),
+            color: AppColors.error,
           ),
           _divider(),
           _StatItem(
@@ -514,7 +514,7 @@ class _TodayStats extends StatelessWidget {
             value: '${controller.completedWork.value}',
             label: 'Tổng Pomodoro',
             icon: Icons.emoji_events_rounded,
-            color: const Color(0xFFFFD166),
+            color: AppColors.warning,
           ),
         ],
       ),
@@ -523,7 +523,7 @@ class _TodayStats extends StatelessWidget {
 
   Widget _divider() => Container(
     width: 1, height: 40,
-    color: Colors.white.withOpacity(0.08),
+    color: AppColors.border,
     margin: const EdgeInsets.symmetric(horizontal: 4),
   );
 }
@@ -543,7 +543,7 @@ class _StatItem extends StatelessWidget {
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 6),
           Text(value, style: const TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+              color: AppColors.onSurface, fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
           Text(label, textAlign: TextAlign.center, style: const TextStyle(
               color: AppColors.tertiary, fontSize: 11)),

@@ -3,9 +3,13 @@ import 'package:get/get.dart';
 import 'home_controller.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../pomodoro/pomodoro_screen.dart';
-import '../tasks/task_list_screen.dart';
+import '../calendar/calendar_screen.dart';
+import '../statistics/statistics_screen.dart';
+import '../profile/profile_screen.dart';
+import '../tasks/task_controller.dart';
+import '../tasks/widgets/add_task_sheet.dart';
 import '../../services/auth_service.dart';
-import '../../routes/app_routes.dart';
+import '../../shared/theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,33 +17,35 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
+    // Đăng ký TaskController toàn cục để Lịch, Thống kê và nút + dùng chung dữ liệu.
+    Get.put(TaskController());
 
     return Obx(() => Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: AppColors.background,
 
       // ── AppBar ──────────────────────────────────────────────────────────────
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D1A),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        title: Obx(() => Text(
+        title: Text(
           _getTitle(controller.currentIndex.value),
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.onSurface,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
-        )),
+        ),
         actions: [
           // Avatar người dùng
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
-              onTap: () => Get.toNamed(AppRoutes.profile),
+              onTap: () => controller.changePage(4),
               child: Obx(() {
                 final photo = AuthService.to.photoUrl.value;
                 return CircleAvatar(
                   radius: 18,
-                  backgroundColor: const Color(0xFF6C63FF),
+                  backgroundColor: AppColors.primary,
                   backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
                   child: photo.isEmpty
                       ? Text(
@@ -60,18 +66,27 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
 
-      // ── Drawer ──────────────────────────────────────────────────────────────
-      drawer: _buildDrawer(),
-
-      // ── Body: 3 tab content ─────────────────────────────────────────────────
+      // ── Body: 5 tab content ─────────────────────────────────────────────────
       body: IndexedStack(
         index: controller.currentIndex.value,
         children: const [
           DashboardScreen(),
           PomodoroScreen(),
-          TaskListScreen(),
+          CalendarScreen(),
+          StatisticsScreen(),
+          ProfileScreen(),
         ],
       ),
+
+      // ── Nút + thêm công việc (ẩn ở tab Pomodoro & Hồ sơ) ─────────────────────
+      floatingActionButton: (controller.currentIndex.value == 1 ||
+              controller.currentIndex.value == 4)
+          ? null
+          : FloatingActionButton(
+              onPressed: () => showAddTaskSheet(context, Get.find<TaskController>()),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+            ),
 
       // ── Bottom Navigation Bar ───────────────────────────────────────────────
       bottomNavigationBar: _buildBottomNav(controller),
@@ -82,20 +97,22 @@ class HomeScreen extends StatelessWidget {
     switch (index) {
       case 0: return 'Tổng quan';
       case 1: return 'Pomodoro';
-      case 2: return 'Công việc';
-      default: return 'TimeFlow';
+      case 2: return 'Lịch';
+      case 3: return 'Thống kê';
+      case 4: return 'Hồ sơ';
+      default: return 'TimeWise';
     }
   }
 
   // ── Bottom Nav ───────────────────────────────────────────────────────────────
   Widget _buildBottomNav(HomeController controller) {
-    return Obx(() => Container(
+    return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
+            color: AppColors.primary.withOpacity(0.10),
+            blurRadius: 12,
             offset: const Offset(0, -2),
           ),
         ],
@@ -105,8 +122,8 @@ class HomeScreen extends StatelessWidget {
         onTap: controller.changePage,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        selectedItemColor: const Color(0xFF6C63FF),
-        unselectedItemColor: Colors.white30,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.tertiary,
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
@@ -125,138 +142,22 @@ class HomeScreen extends StatelessWidget {
             label: 'Pomodoro',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.task_alt_outlined),
-            activeIcon: Icon(Icons.task_alt_rounded),
-            label: 'Công việc',
+            icon: Icon(Icons.calendar_month_outlined),
+            activeIcon: Icon(Icons.calendar_month_rounded),
+            label: 'Lịch',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart_rounded),
+            label: 'Thống kê',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline_rounded),
+            activeIcon: Icon(Icons.person_rounded),
+            label: 'Hồ sơ',
           ),
         ],
       ),
-    ));
-  }
-
-  // ── Drawer ───────────────────────────────────────────────────────────────────
-  Widget _buildDrawer() {
-    return Drawer(
-      backgroundColor: const Color(0xFF1A1A2E),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              color: const Color(0xFF16213E),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Obx(() {
-                    final photo = AuthService.to.photoUrl.value;
-                    return CircleAvatar(
-                      radius: 32,
-                      backgroundColor: const Color(0xFF6C63FF),
-                      backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                      child: photo.isEmpty
-                          ? Text(
-                        AuthService.to.userName.value.isNotEmpty
-                            ? AuthService.to.userName.value[0].toUpperCase()
-                            : 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                          : null,
-                    );
-                  }),
-                  const SizedBox(height: 12),
-                  Obx(() => Text(
-                    AuthService.to.userName.value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )),
-                  Obx(() => Text(
-                    AuthService.to.userEmail.value,
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 13,
-                    ),
-                  )),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Menu items
-            _drawerItem(Icons.person_outline, 'Hồ sơ', () {
-              Get.back();
-              Get.toNamed(AppRoutes.profile);
-            }),
-            _drawerItem(Icons.calendar_month_outlined, 'Lập lịch', () {
-              Get.back();
-              Get.toNamed(AppRoutes.schedule);
-            }),
-            _drawerItem(Icons.bar_chart_rounded, 'Báo cáo', () {
-              Get.back();
-              Get.toNamed(AppRoutes.report);
-            }),
-            _drawerItem(Icons.settings_outlined, 'Cài đặt', () {
-              Get.back();
-            }),
-
-            const Spacer(),
-
-            // Đăng xuất
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: GestureDetector(
-                onTap: () async {
-                  await AuthService.to.clearSession();
-                  Get.offAllNamed(AppRoutes.login);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.logout, color: Colors.redAccent, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Đăng xuất',
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _drawerItem(IconData icon, String label, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.white60, size: 22),
-      title: Text(
-        label,
-        style: const TextStyle(color: Colors.white70, fontSize: 15),
-      ),
-      onTap: onTap,
-      hoverColor: Colors.white.withOpacity(0.05),
     );
   }
 }

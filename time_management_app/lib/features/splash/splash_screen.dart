@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'splash_controller.dart';
+import '../../shared/theme/app_theme.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -11,7 +12,7 @@ class SplashScreen extends StatelessWidget {
       init: SplashController(),
       builder: (controller) {
         return Scaffold(
-          backgroundColor: const Color(0xFF0D0D1A),
+          backgroundColor: AppColors.background,
           body: Stack(
             children: [
               // --- Background animated circles ---
@@ -50,7 +51,7 @@ class SplashScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.white,
+                                  color: AppColors.onSurface,
                                   letterSpacing: 1.5,
                                 ),
                               ),
@@ -59,7 +60,7 @@ class SplashScreen extends StatelessWidget {
                                 'Quản lý thời gian thông minh',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white54,
+                                  color: AppColors.onSurfaceVariant,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -86,9 +87,9 @@ class SplashScreen extends StatelessWidget {
                         SizedBox(
                           width: 120,
                           child: LinearProgressIndicator(
-                            backgroundColor: Colors.white12,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              const Color(0xFF6C63FF),
+                            backgroundColor: AppColors.border,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -97,7 +98,7 @@ class SplashScreen extends StatelessWidget {
                         Obx(() => Text(
                           controller.statusText.value,
                           style: const TextStyle(
-                            color: Colors.white38,
+                            color: AppColors.tertiary,
                             fontSize: 12,
                           ),
                         )),
@@ -127,11 +128,11 @@ class _LogoWidget extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF6C63FF), Color(0xFF3D5AFE)],
+          colors: AppColors.skyGradient,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6C63FF).withOpacity(0.5),
+            color: AppColors.primary.withOpacity(0.4),
             blurRadius: 30,
             spreadRadius: 5,
           ),
@@ -194,7 +195,7 @@ class _BackgroundPainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
 
     // Circle 1 — top left
-    paint.color = const Color(0xFF6C63FF).withOpacity(0.12 + 0.06 * progress);
+    paint.color = AppColors.primary.withOpacity(0.14 + 0.06 * progress);
     canvas.drawCircle(
       Offset(size.width * 0.1, size.height * 0.15),
       120 + 20 * progress,
@@ -202,7 +203,7 @@ class _BackgroundPainter extends CustomPainter {
     );
 
     // Circle 2 — top right
-    paint.color = const Color(0xFF3D5AFE).withOpacity(0.10 + 0.05 * progress);
+    paint.color = AppColors.skyLight.withOpacity(0.16 + 0.05 * progress);
     canvas.drawCircle(
       Offset(size.width * 0.9, size.height * 0.1),
       90 + 15 * progress,
@@ -210,7 +211,7 @@ class _BackgroundPainter extends CustomPainter {
     );
 
     // Circle 3 — bottom center
-    paint.color = const Color(0xFF6C63FF).withOpacity(0.08 + 0.07 * (1 - progress));
+    paint.color = AppColors.primary.withOpacity(0.10 + 0.07 * (1 - progress));
     canvas.drawCircle(
       Offset(size.width * 0.5, size.height * 0.9),
       140 + 25 * (1 - progress),

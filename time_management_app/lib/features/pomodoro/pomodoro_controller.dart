@@ -69,9 +69,9 @@ class PomodoroController extends GetxController {
 
   Color get sessionColor {
     switch (currentType.value) {
-      case PomodoroType.work:       return const Color(0xFF0061A4);
-      case PomodoroType.shortBreak: return const Color(0xFF4ECDC4);
-      case PomodoroType.longBreak:  return const Color(0xFF535F70);
+      case PomodoroType.work:       return AppColors.pomodoroWork;
+      case PomodoroType.shortBreak: return AppColors.pomodoroShortBreak;
+      case PomodoroType.longBreak:  return AppColors.pomodoroLongBreak;
     }
   }
 

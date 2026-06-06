@@ -24,7 +24,7 @@ class TimeWiseApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'TimeWise',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
     );

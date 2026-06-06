@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'login_controller.dart';
+import '../../shared/theme/app_theme.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -10,7 +11,7 @@ class LoginScreen extends StatelessWidget {
     final controller = Get.put(LoginController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // Background decoration
@@ -75,13 +76,13 @@ class LoginScreen extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: const LinearGradient(
-              colors: [Color(0xFF6C63FF), Color(0xFF3D5AFE)],
+              colors: AppColors.skyGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6C63FF).withOpacity(0.4),
+                color: AppColors.primary.withOpacity(0.35),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -101,7 +102,7 @@ class LoginScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: AppColors.onSurface,
             height: 1.1,
           ),
         ),
@@ -112,7 +113,7 @@ class LoginScreen extends StatelessWidget {
           'Đăng nhập để bắt đầu\nquản lý thời gian của bạn',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.white54,
+            color: AppColors.onSurfaceVariant,
             height: 1.5,
           ),
         ),
@@ -132,12 +133,12 @@ class LoginScreen extends StatelessWidget {
   Widget _buildFeatureRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF6C63FF), size: 20),
+        Icon(icon, color: AppColors.primary, size: 20),
         const SizedBox(width: 12),
         Text(
           text,
           style: const TextStyle(
-            color: Colors.white70,
+            color: AppColors.onSurfaceVariant,
             fontSize: 14,
           ),
         ),
@@ -155,16 +156,17 @@ class LoginScreen extends StatelessWidget {
         height: 56,
         decoration: BoxDecoration(
           color: controller.isLoading.value
-              ? Colors.white.withOpacity(0.08)
+              ? AppColors.inputFill
               : Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
           boxShadow: controller.isLoading.value
               ? []
               : [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: AppColors.primary.withOpacity(0.12),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -175,7 +177,7 @@ class LoginScreen extends StatelessWidget {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              color: Color(0xFF6C63FF),
+              color: AppColors.primary,
             ),
           ),
         )
@@ -239,8 +241,8 @@ class LoginScreen extends StatelessWidget {
       child: Text(
         'Bằng cách đăng nhập, bạn đồng ý với\nChính sách bảo mật của TimeWise',
         textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.25),
+        style: const TextStyle(
+          color: AppColors.tertiary,
           fontSize: 12,
           height: 1.6,
         ),
@@ -255,13 +257,13 @@ class _LoginBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    paint.color = const Color(0xFF6C63FF).withOpacity(0.07);
+    paint.color = AppColors.primary.withOpacity(0.10);
     canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.12), 160, paint);
 
-    paint.color = const Color(0xFF3D5AFE).withOpacity(0.05);
+    paint.color = AppColors.skyLight.withOpacity(0.12);
     canvas.drawCircle(Offset(size.width * 0.1, size.height * 0.75), 130, paint);
 
-    paint.color = const Color(0xFF6C63FF).withOpacity(0.04);
+    paint.color = AppColors.primary.withOpacity(0.06);
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.95), 100, paint);
   }
 

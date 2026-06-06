@@ -20,9 +20,7 @@ class ApiService extends GetxService {
   // Chạy trên máy thật (Wi-Fi)  → IP máy tính, ví dụ 192.168.1.5
   // Đã deploy lên server        → https://yourdomain.com
 
-  //static const String baseUrl = 'http://10.0.2.2:5000';
-
-  static const String baseUrl = 'http://localhost:56473';
+  static const String baseUrl = 'http://10.0.2.2:5000';
 
   Future<ApiService> init() async {
     _dio = Dio(BaseOptions(

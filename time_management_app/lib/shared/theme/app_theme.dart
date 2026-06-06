@@ -1,31 +1,40 @@
 import 'package:flutter/material.dart';
 
 abstract class AppColors {
-  // ── Brand palette ────────────────────────────────────────────────────────────
-  static const primary     = Color(0xFF0061A4);
-  static const secondary   = Color(0xFFD1E4FF);
-  static const tertiary    = Color(0xFF535F70);
-  static const neutral     = Color(0xFFFDFCFF);
+  // ── Brand palette (Sky blue, light & cool) ──────────────────────────────────
+  static const primary     = Color(0xFF2BAEE6);   // sky blue
+  static const primaryDark  = Color(0xFF1B8FC4);   // deeper sky (gradient end / pressed)
+  static const skyLight     = Color(0xFF6FCCF1);   // light sky
+  static const secondary   = Color(0xFFD8EEFB);   // light blue container
+  static const tertiary    = Color(0xFF93A8B8);   // muted text / icon
+  static const neutral     = Color(0xFFFFFFFF);
 
-  // ── Derived tones (Material You style) ───────────────────────────────────────
-  static const primaryDark      = Color(0xFF004880);   // primary 80%
-  static const primaryContainer = Color(0xFFD1E4FF);   // = secondary
+  // ── Surfaces & backgrounds (bright) ──────────────────────────────────────────
+  static const background       = Color(0xFFEAF2FB);   // app background (cool off-white blue)
+  static const surface          = Color(0xFFFFFFFF);   // cards / sheets
+  static const surfaceVariant   = Color(0xFFFFFFFF);   // cards / inputs
+  static const inputFill        = Color(0xFFEFF5FB);   // input fields
+  static const border           = Color(0xFFDCE8F2);   // subtle borders
+
+  static const primaryContainer = Color(0xFFD8EEFB);
   static const onPrimary        = Color(0xFFFFFFFF);
-  static const onPrimaryContainer = Color(0xFF001D36);
+  static const onPrimaryContainer = Color(0xFF06354F);
 
-  static const surface      = Color(0xFF1A2332);       // dark surface
-  static const surfaceVariant = Color(0xFF243044);     // card bg
-  static const onSurface    = Color(0xFFE2E8F0);
-  static const onSurfaceVariant = Color(0xFFB0BEC5);
+  // ── Text ──────────────────────────────────────────────────────────────────────
+  static const onSurface        = Color(0xFF12303F);   // primary text (dark slate)
+  static const onSurfaceVariant = Color(0xFF5A7282);   // secondary text
 
-  static const error   = Color(0xFFFF6B6B);
-  static const success = Color(0xFF4ECDC4);
-  static const warning = Color(0xFFFFD166);
+  static const error   = Color(0xFFE5565B);
+  static const success = Color(0xFF12B5A5);
+  static const warning = Color(0xFFF5A524);
 
   // ── Pomodoro specific ─────────────────────────────────────────────────────────
-  static const pomodoroWork       = Color(0xFF0061A4);  // primary
-  static const pomodoroShortBreak = Color(0xFF4ECDC4);  // teal
-  static const pomodoroLongBreak  = Color(0xFF535F70);  // tertiary
+  static const pomodoroWork       = Color(0xFF2BAEE6);  // primary sky
+  static const pomodoroShortBreak = Color(0xFF12B5A5);  // teal
+  static const pomodoroLongBreak  = Color(0xFF93A8B8);  // muted
+
+  // ── Gradient dùng chung cho card/nút nổi bật ─────────────────────────────────
+  static const skyGradient = [Color(0xFF56CCF2), Color(0xFF2BAEE6)];
 }
 
 abstract class AppTextStyles {
@@ -72,23 +81,25 @@ abstract class AppTextStyles {
 }
 
 class AppTheme {
-  static ThemeData get dark => ThemeData(
+  /// Theme sáng, tông xanh da trời mát.
+  static ThemeData get light => ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: const Color(0xFF0F1923),
-    colorScheme: const ColorScheme.dark(
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: AppColors.background,
+    colorScheme: const ColorScheme.light(
       primary:            AppColors.primary,
       onPrimary:          AppColors.onPrimary,
       primaryContainer:   AppColors.primaryContainer,
       onPrimaryContainer: AppColors.onPrimaryContainer,
-      secondary:          AppColors.secondary,
+      secondary:          AppColors.primary,
+      onSecondary:        AppColors.onPrimary,
       tertiary:           AppColors.tertiary,
       surface:            AppColors.surface,
       onSurface:          AppColors.onSurface,
       error:              AppColors.error,
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF0F1923),
+      backgroundColor: AppColors.background,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: AppTextStyles.titleLarge,
@@ -102,27 +113,27 @@ class AppTheme {
       elevation: 0,
     ),
     cardTheme: CardThemeData(
-      color: AppColors.surfaceVariant,
+      color: AppColors.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.surfaceVariant,
+      fillColor: AppColors.inputFill,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+        borderSide: const BorderSide(color: AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       labelStyle: AppTextStyles.bodyMedium,
-      hintStyle: TextStyle(color: AppColors.tertiary.withOpacity(0.6)),
+      hintStyle: const TextStyle(color: AppColors.tertiary),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -138,7 +149,7 @@ class AppTheme {
       backgroundColor: AppColors.surfaceVariant,
       selectedColor: AppColors.primaryContainer,
       labelStyle: AppTextStyles.bodyMedium,
-      side: BorderSide(color: Colors.white.withOpacity(0.08)),
+      side: const BorderSide(color: AppColors.border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -147,4 +158,7 @@ class AppTheme {
       elevation: 2,
     ),
   );
+
+  /// Giữ alias cũ để không vỡ chỗ tham chiếu AppTheme.dark.
+  static ThemeData get dark => light;
 }

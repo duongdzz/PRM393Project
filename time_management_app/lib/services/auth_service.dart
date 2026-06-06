@@ -86,7 +86,4 @@ class AuthService extends GetxService {
     await _prefs.remove(_keyUserEmail);
     await _prefs.remove(_keyPhotoUrl);
   }
-
-  // ── Getter tiện lợi ───────────────────────────────────────────────────────────
-  bool get isLoggedIn => token.value.isNotEmpty;
 }
