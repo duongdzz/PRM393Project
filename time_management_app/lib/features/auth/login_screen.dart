@@ -34,6 +34,9 @@ class LoginScreen extends StatelessWidget {
                   // Google Sign-In button
                   _buildGoogleButton(controller),
 
+                  const SizedBox(height: 12),
+                  _buildGuestButton(controller),
+
                   const SizedBox(height: 16),
 
                   // Thông báo lỗi
@@ -206,6 +209,21 @@ class LoginScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    ));
+  }
+
+  // ── Guest button ─────────────────────────────────────────────────────────────
+  Widget _buildGuestButton(LoginController controller) {
+    return Obx(() => TextButton(
+      onPressed: controller.isLoading.value ? null : controller.signInAsGuest,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+      child: const Text(
+        'Tiếp tục với tài khoản khách',
+        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),
     ));
   }

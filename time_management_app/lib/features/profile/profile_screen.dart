@@ -81,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
           Obx(() => Text(
                 AuthService.to.userName.value.isNotEmpty
                     ? AuthService.to.userName.value
-                    : 'Người dùng',
+                    : 'Người dùng test',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,

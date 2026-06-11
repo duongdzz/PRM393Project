@@ -66,7 +66,6 @@ class TaskController extends GetxController {
 
   void addTask(TaskModel task) => tasks.add(task);
 
-  // Business Rule: không cho done nếu còn sub-task chưa xong.
   // Trả về null nếu thành công, hoặc thông báo lỗi.
   String? tryMarkDone(String taskId) {
     final task = tasks.firstWhereOrNull((t) => t.id == taskId);

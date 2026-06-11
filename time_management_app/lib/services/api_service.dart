@@ -15,11 +15,6 @@ class ApiService extends GetxService {
 
   late final Dio _dio;
 
-  // TODO: Đổi thành IP/domain thật của máy chạy ASP.NET
-  // Chạy trên Android emulator  → 10.0.2.2
-  // Chạy trên máy thật (Wi-Fi)  → IP máy tính, ví dụ 192.168.1.5
-  // Đã deploy lên server        → https://yourdomain.com
-
   static const String baseUrl = 'http://10.0.2.2:5000';
 
   Future<ApiService> init() async {
@@ -41,7 +36,7 @@ class ApiService extends GetxService {
       },
 
       onError: (DioException e, handler) {
-        // Token hết hạn → đăng xuất
+        // token hết hạn thì đăng xuất
         if (e.response?.statusCode == 401) {
           AuthService.to.clearSession();
           Get.offAllNamed('/login');

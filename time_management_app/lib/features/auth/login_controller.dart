@@ -8,45 +8,61 @@ class LoginController extends GetxController {
   final isLoading    = false.obs;
   final errorMessage = ''.obs;
 
-  // Web client ID (loại "Web application") tạo trong Google Cloud Console.
-  // Bắt buộc nếu muốn lấy idToken để backend ASP.NET verify.
-  // Để trống nếu chỉ cần đăng nhập lấy thông tin user phía client.
+
   static const String _serverClientId = '902695750711-t8053eb25qkq2spsaff9ki1710tpu4n5.apps.googleusercontent.com';
 
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   bool _googleSignInInitialized = false;
+
+  /// Vào app xem thử không cần đăng nhập Google.
+  Future<void> signInAsGuest() async {
+    if (isLoading.value) return;
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      await AuthService.to.saveSession(
+        newToken:     'guest_token',
+        newUserId:    'guest',
+        newUserName:  'Khách',
+        newUserEmail: '',
+        newPhotoUrl:  '',
+      );
+      Get.offAllNamed(AppRoutes.home);
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   Future<void> signInWithGoogle() async {
     try {
       isLoading.value    = true;
       errorMessage.value = '';
 
-      if (kIsWeb) {
-        // Web cần luồng renderButton riêng → tạm dùng mock khi chạy Chrome.
-        await Future.delayed(const Duration(milliseconds: 800));
-        await AuthService.to.saveSession(
-          newToken:     'web_mock_token_123',
-          newUserId:    '1',
-          newUserName:  'Người dùng Test',
-          newUserEmail: 'test@gmail.com',
-          newPhotoUrl:  '',
-        );
-        Get.offAllNamed(AppRoutes.home);
-        return;
-      }
+      // if (kIsWeb) {
+      //   await Future.delayed(const Duration(milliseconds: 800));
+      //   await AuthService.to.saveSession(
+      //     newToken:     'web_mock_token_123',
+      //     newUserId:    '1',
+      //     newUserName:  'Em Dương Đang test',
+      //     newUserEmail: 'test@gmail.com',
+      //     newPhotoUrl:  '',
+      //   );
+      //   Get.offAllNamed(AppRoutes.home);
+      //   return;
+      // }
 
-      // ── Android/iOS: Google Sign-In thật ──────────────────────────────────
+      // Android/iOS: Google Sign-In thật 
       await _initializeGoogleSignIn();
       final GoogleSignInAccount account = await _googleSignIn.authenticate(
         scopeHint: const ['email', 'profile'],
       );
-
+      
       final GoogleSignInAuthentication auth = account.authentication;
-
+      
       // idToken chỉ có khi cấu hình serverClientId/Web OAuth client.
       // Fallback account.id giúp app lưu session local trong giai đoạn chưa có backend.
       final String sessionToken = auth.idToken ?? account.id;
-
+      
       await AuthService.to.saveSession(
         newToken:     sessionToken,
         newUserId:    account.id,
@@ -66,6 +82,15 @@ class LoginController extends GetxController {
     }
   }
 
+
+  Future<void> signInWithEmailAndPassword(String email, String password) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+    } catch (e) {
+      errorMessage.value = 'Đăng nhập thất bại. Vui lòng thử lại.';
+    }
+  }
   Future<void> _initializeGoogleSignIn() async {
     if (_googleSignInInitialized) return;
 

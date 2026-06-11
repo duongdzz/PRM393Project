@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// AuthService — singleton quản lý session người dùng.
-/// Lưu token vào SharedPreferences sau khi đăng nhập REST API thành công.
+
 class AuthService extends GetxService {
   static AuthService get to => Get.find<AuthService>();
 
