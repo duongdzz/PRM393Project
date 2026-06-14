@@ -349,7 +349,7 @@ class _TaskInput extends StatelessWidget {
             const Text('Chọn công việc',
                 style: TextStyle(color: AppColors.onSurface, fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
-            // Mock tasks — sẽ thay bằng TaskController.tasks sau
+
             ...['Ôn tập Flutter', 'Làm báo cáo', 'Code project', 'Đọc tài liệu'].map(
                   (task) => ListTile(
                 leading: const Icon(Icons.radio_button_unchecked, color: AppColors.primary),

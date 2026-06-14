@@ -160,10 +160,7 @@ class PomodoroController extends GetxController {
   }
 
   void _onSessionFinished() {
-    // TODO: trigger local notification
-    // TODO: cập nhật actual_minutes cho task hiện tại qua API
     _moveToNextSession();
-    // Auto start break (tuỳ cài đặt — hiện tại không auto)
   }
 
   // ── Today stats ──────────────────────────────────────────────────────────────

@@ -39,18 +39,14 @@ class DashboardScreen extends StatelessWidget {
 
           // Nội dung phản ứng theo dữ liệu task + pomodoro
           Obx(() {
-            final now = DateTime.now();
-            final todayAll = taskC.tasks.where((t) =>
-                t.deadline != null &&
-                _isSameDay(t.deadline!, now) &&
-                t.status != TaskStatus.cancelled).toList()
-              ..sort((a, b) => a.deadline!.compareTo(b.deadline!));
+            final now = dateOnly(DateTime.now());
+            final todayAll = taskC.tasksOn(now);
 
             final remaining = todayAll
-                .where((t) => t.status != TaskStatus.done)
+                .where((t) => !taskC.isDoneOn(t, now))
                 .toList();
             final doneCount = todayAll
-                .where((t) => t.status == TaskStatus.done)
+                .where((t) => taskC.isDoneOn(t, now))
                 .length;
 
             final focusMin = pomoC.todayFocusMinutes;
@@ -64,7 +60,7 @@ class DashboardScreen extends StatelessWidget {
 
                 Row(
                   children: [
-                    Expanded(child: _buildStatCard('${remaining.length}', 'Task hôm nay', Icons.task_alt_rounded, AppColors.primary)),
+                    Expanded(child: _buildStatCard('${remaining.length}', 'Việc hôm nay', Icons.task_alt_rounded, AppColors.primary)),
                     const SizedBox(width: 12),
                     Expanded(child: _buildStatCard('$sessions', 'Pomodoro', Icons.timer_rounded, AppColors.error)),
                     const SizedBox(width: 12),
@@ -77,7 +73,7 @@ class DashboardScreen extends StatelessWidget {
                 Row(
                   children: [
                     const Text(
-                      'Sắp tới hôm nay',
+                      'Việc lặp lại hôm nay',
                       style: TextStyle(color: AppColors.onSurface, fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                     const Spacer(),
@@ -91,9 +87,13 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 if (todayAll.isEmpty)
-                  _buildEmptyState('Chưa có công việc nào hôm nay', Icons.calendar_today_outlined)
+                  _buildEmptyState('Chưa có công việc lặp lại hôm nay', Icons.repeat_rounded)
                 else
-                  ...todayAll.map((t) => _TodayTaskTile(task: t, controller: taskC)),
+                  ...todayAll.map((t) => _TodayTaskTile(
+                        task: t,
+                        controller: taskC,
+                        occurrenceDate: now,
+                      )),
               ],
             );
           }),
@@ -101,9 +101,6 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
-
-  bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   String _focusText(int minutes) {
     if (minutes < 60) return '${minutes}p';
@@ -223,7 +220,12 @@ class DashboardScreen extends StatelessWidget {
 class _TodayTaskTile extends StatelessWidget {
   final TaskModel task;
   final TaskController controller;
-  const _TodayTaskTile({required this.task, required this.controller});
+  final DateTime occurrenceDate;
+  const _TodayTaskTile({
+    required this.task,
+    required this.controller,
+    required this.occurrenceDate,
+  });
 
   Color _priorityColor(TaskPriority p) {
     switch (p) {
@@ -236,10 +238,7 @@ class _TodayTaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDone = task.status == TaskStatus.done;
-    final deadline = task.deadline!;
-    final timeText =
-        '${deadline.hour.toString().padLeft(2, '0')}:${deadline.minute.toString().padLeft(2, '0')}';
+    final isDone = controller.isDoneOn(task, occurrenceDate);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -278,27 +277,18 @@ class _TodayTaskTile extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      isDone ? Icons.check_circle_rounded : Icons.access_time_rounded,
+                      isDone ? Icons.check_circle_rounded : Icons.repeat_rounded,
                       size: 12,
                       color: isDone ? AppColors.success : AppColors.tertiary,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isDone ? 'Đã hoàn thành' : timeText,
+                      isDone ? 'Đã hoàn thành' : task.recurrence.label,
                       style: TextStyle(
                         color: isDone ? AppColors.success : AppColors.tertiary,
                         fontSize: 12,
                       ),
                     ),
-                    if (!isDone && task.estimatedMinutes != null && task.estimatedMinutes! > 0) ...[
-                      const SizedBox(width: 10),
-                      const Icon(Icons.timer_outlined, size: 12, color: AppColors.tertiary),
-                      const SizedBox(width: 4),
-                      Text(
-                        formatDuration(task.estimatedMinutes!),
-                        style: const TextStyle(color: AppColors.tertiary, fontSize: 12),
-                      ),
-                    ],
                   ],
                 ),
               ],
@@ -307,7 +297,7 @@ class _TodayTaskTile extends StatelessWidget {
           if (!isDone)
             GestureDetector(
               onTap: () {
-                final error = controller.tryMarkDone(task.id);
+                final error = controller.tryMarkDone(task.id, onDate: occurrenceDate);
                 if (error != null) {
                   Get.snackbar('Không thể hoàn thành', error,
                       backgroundColor: AppColors.surface,

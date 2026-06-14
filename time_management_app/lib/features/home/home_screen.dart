@@ -17,7 +17,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
-    // Đăng ký TaskController toàn cục để Lịch, Thống kê và nút + dùng chung dữ liệu.
     Get.put(TaskController());
 
     return Obx(() => Scaffold(

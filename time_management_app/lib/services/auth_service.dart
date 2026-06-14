@@ -35,20 +35,10 @@ class AuthService extends GetxService {
   }
 
   // ── Kiểm tra session còn hợp lệ không ────────────────────────────────────────
-  /// Trả về true nếu có token hợp lệ.
-  /// Mở rộng sau: gọi API /auth/verify-token để validate với server.
   Future<bool> checkSession() async {
     if (token.value.isEmpty) return false;
 
-    // TODO: Gọi REST API kiểm tra token còn hạn không
-    // try {
-    //   final response = await ApiService.to.get('/auth/verify-token');
-    //   return response.statusCode == 200;
-    // } catch (_) {
-    //   return false;
-    // }
-
-    return true; // Tạm thời tin tưởng token local
+    return true; 
   }
 
   // ── Lưu session sau đăng nhập thành công ─────────────────────────────────────

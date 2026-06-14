@@ -25,7 +25,6 @@ class ApiService extends GetxService {
       headers: {'Content-Type': 'application/json'},
     ));
 
-    // Interceptor: tự động gắn JWT token vào mọi request
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = AuthService.to.token.value;

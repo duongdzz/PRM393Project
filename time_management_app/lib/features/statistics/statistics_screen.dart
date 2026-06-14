@@ -15,36 +15,36 @@ class StatisticsScreen extends StatelessWidget {
     return Container(
       color: AppColors.background,
       child: Obx(() {
-        final tasks = taskC.tasks;
-        final total = tasks.where((t) => t.status != TaskStatus.cancelled).length;
-        final done = tasks.where((t) => t.status == TaskStatus.done).length;
-        final inProgress = tasks.where((t) => t.status == TaskStatus.inProgress).length;
-        final todo = tasks.where((t) => t.status == TaskStatus.todo).length;
+        final today = dateOnly(DateTime.now());
+        final todayTasks = taskC.tasksOn(today);
+        final doneToday = todayTasks.where((t) => taskC.isDoneOn(t, today)).length;
+        final todoToday = todayTasks.length - doneToday;
+        final recurring = taskC.recurringCount;
         final overdue = taskC.overdueTasks.length;
-        final completionRate = total == 0 ? 0.0 : done / total;
+        final completionRate = todayTasks.isEmpty ? 0.0 : doneToday / todayTasks.length;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildCompletionCard(done, total, completionRate),
+              _buildCompletionCard(doneToday, todayTasks.length, completionRate),
               const SizedBox(height: 20),
 
-              const Text('Tổng quan công việc',
+              const Text('Hôm nay',
                   style: TextStyle(color: AppColors.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _statCard('$todo', 'Cần làm', Icons.radio_button_unchecked_rounded, AppColors.tertiary)),
+                  Expanded(child: _statCard('$todoToday', 'Cần làm', Icons.radio_button_unchecked_rounded, AppColors.tertiary)),
                   const SizedBox(width: 12),
-                  Expanded(child: _statCard('$inProgress', 'Đang làm', Icons.timelapse_rounded, AppColors.primary)),
+                  Expanded(child: _statCard('$doneToday', 'Đã xong', Icons.check_circle_rounded, AppColors.success)),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _statCard('$done', 'Hoàn thành', Icons.check_circle_rounded, AppColors.success)),
+                  Expanded(child: _statCard('$recurring', 'Việc lặp lại', Icons.repeat_rounded, AppColors.primary)),
                   const SizedBox(width: 12),
                   Expanded(child: _statCard('$overdue', 'Quá hạn', Icons.warning_amber_rounded, AppColors.error)),
                 ],
@@ -55,7 +55,7 @@ class StatisticsScreen extends StatelessWidget {
               const Text('Phân bố theo mức ưu tiên',
                   style: TextStyle(color: AppColors.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
-              _buildPriorityChart(tasks),
+              _buildPriorityChart(taskC.tasks),
 
               const SizedBox(height: 24),
 
@@ -125,10 +125,10 @@ class StatisticsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Tỷ lệ hoàn thành',
+                const Text('Tỷ lệ hoàn thành hôm nay',
                     style: TextStyle(color: Colors.white70, fontSize: 13)),
                 const SizedBox(height: 6),
-                Text('$done / $total công việc',
+                Text('$done / $total lần lặp',
                     style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(

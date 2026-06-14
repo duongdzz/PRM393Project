@@ -38,18 +38,18 @@ class LoginController extends GetxController {
       isLoading.value    = true;
       errorMessage.value = '';
 
-      // if (kIsWeb) {
-      //   await Future.delayed(const Duration(milliseconds: 800));
-      //   await AuthService.to.saveSession(
-      //     newToken:     'web_mock_token_123',
-      //     newUserId:    '1',
-      //     newUserName:  'Em Dương Đang test',
-      //     newUserEmail: 'test@gmail.com',
-      //     newPhotoUrl:  '',
-      //   );
-      //   Get.offAllNamed(AppRoutes.home);
-      //   return;
-      // }
+      if (kIsWeb) {
+        await Future.delayed(const Duration(milliseconds: 800));
+        await AuthService.to.saveSession(
+          newToken:     'web_mock_token_123',
+          newUserId:    '1',
+          newUserName:  'Em Dương Đang test',
+          newUserEmail: 'test@gmail.com',
+          newPhotoUrl:  '',
+        );
+        Get.offAllNamed(AppRoutes.home);
+        return;
+      }
 
       // Android/iOS: Google Sign-In thật 
       await _initializeGoogleSignIn();

@@ -33,17 +33,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  List<TaskModel> _tasksOn(DateTime day) {
-    return _c.tasks.where((t) {
-      final d = t.deadline;
-      return d != null &&
-          d.year == day.year &&
-          d.month == day.month &&
-          d.day == day.day &&
-          t.status != TaskStatus.cancelled;
-    }).toList()
-      ..sort((a, b) => a.deadline!.compareTo(b.deadline!));
-  }
+  List<TaskModel> _tasksOn(DateTime day) => _c.tasksOn(day);
 
   void _changeMonth(int delta) {
     setState(() {
@@ -273,7 +263,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   itemCount: tasks.length,
-                  itemBuilder: (_, i) => _CalendarTaskTile(task: tasks[i], controller: _c),
+                  itemBuilder: (_, i) => _CalendarTaskTile(
+                        task: tasks[i],
+                        controller: _c,
+                        occurrenceDate: _selectedDay,
+                      ),
                 ),
         ),
       ],
@@ -285,7 +279,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
 class _CalendarTaskTile extends StatelessWidget {
   final TaskModel task;
   final TaskController controller;
-  const _CalendarTaskTile({required this.task, required this.controller});
+  final DateTime occurrenceDate;
+  const _CalendarTaskTile({
+    required this.task,
+    required this.controller,
+    required this.occurrenceDate,
+  });
 
   Color _priorityColor(TaskPriority p) {
     switch (p) {
@@ -298,10 +297,12 @@ class _CalendarTaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final deadline = task.deadline!;
-    final timeText =
-        '${deadline.hour.toString().padLeft(2, '0')}:${deadline.minute.toString().padLeft(2, '0')}';
-    final isDone = task.status == TaskStatus.done;
+    final isDone = controller.isDoneOn(task, occurrenceDate);
+    final subtitle = task.isRecurring
+        ? task.recurrence.label
+        : (task.deadline != null
+            ? '${task.deadline!.day}/${task.deadline!.month}/${task.deadline!.year}'
+            : '');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -337,26 +338,23 @@ class _CalendarTaskTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.access_time_rounded, size: 12, color: AppColors.tertiary),
+                    Icon(
+                      task.isRecurring ? Icons.repeat_rounded : Icons.calendar_today_outlined,
+                      size: 12,
+                      color: AppColors.tertiary,
+                    ),
                     const SizedBox(width: 4),
-                    Text(timeText,
+                    Text(subtitle,
                         style: const TextStyle(color: AppColors.tertiary, fontSize: 12)),
-                    if (task.estimatedMinutes != null && task.estimatedMinutes! > 0) ...[
-                      const SizedBox(width: 10),
-                      const Icon(Icons.timer_outlined, size: 12, color: AppColors.tertiary),
-                      const SizedBox(width: 4),
-                      Text(formatDuration(task.estimatedMinutes!),
-                          style: const TextStyle(color: AppColors.tertiary, fontSize: 12)),
-                    ],
                   ],
                 ),
               ],
             ),
           ),
-          if (!isDone && task.status != TaskStatus.cancelled)
+          if (!isDone)
             GestureDetector(
               onTap: () {
-                final error = controller.tryMarkDone(task.id);
+                final error = controller.tryMarkDone(task.id, onDate: occurrenceDate);
                 if (error != null) {
                   Get.snackbar('Không thể hoàn thành', error,
                       backgroundColor: AppColors.surfaceVariant,
