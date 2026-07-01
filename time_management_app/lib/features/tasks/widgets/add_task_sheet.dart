@@ -301,7 +301,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_titleCtrl.text.trim().isEmpty) {
       Get.snackbar('Lỗi', 'Vui lòng nhập tên công việc',
           backgroundColor: AppColors.surface,
@@ -326,7 +326,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         ? (List<int>.from(_weekDays)..sort())
         : <int>[];
 
-    widget.controller.addTask(TaskModel(
+    final error = await widget.controller.addTask(TaskModel(
       id:          DateTime.now().millisecondsSinceEpoch.toString(),
       title:       _titleCtrl.text.trim(),
       description: _descCtrl.text.trim(),
@@ -338,6 +338,17 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       createdAt:   now,
       updatedAt:   now,
     ));
+    if (error != null) {
+      if (!mounted) return;
+      Get.snackbar('Lỗi', error,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.onSurface,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12);
+      return;
+    }
+    if (!mounted) return;
     Navigator.pop(context);
     Get.snackbar('✓ Đã thêm', _titleCtrl.text.trim(),
         backgroundColor: AppColors.surface,

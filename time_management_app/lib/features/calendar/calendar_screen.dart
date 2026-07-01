@@ -353,8 +353,9 @@ class _CalendarTaskTile extends StatelessWidget {
           ),
           if (!isDone)
             GestureDetector(
-              onTap: () {
-                final error = controller.tryMarkDone(task.id, onDate: occurrenceDate);
+              onTap: () async {
+                final error =
+                    await controller.tryMarkDone(task.id, onDate: occurrenceDate);
                 if (error != null) {
                   Get.snackbar('Không thể hoàn thành', error,
                       backgroundColor: AppColors.surfaceVariant,

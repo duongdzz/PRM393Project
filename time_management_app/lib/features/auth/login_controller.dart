@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../routes/app_routes.dart';
+import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 
 class LoginController extends GetxController {
@@ -39,47 +40,60 @@ class LoginController extends GetxController {
       errorMessage.value = '';
 
       if (kIsWeb) {
-        await Future.delayed(const Duration(milliseconds: 800));
-        await AuthService.to.saveSession(
-          newToken:     'web_mock_token_123',
-          newUserId:    '1',
-          newUserName:  'Em Dương Đang test',
-          newUserEmail: 'test@gmail.com',
-          newPhotoUrl:  '',
-        );
+        await _signInViaApiDev();
         Get.offAllNamed(AppRoutes.home);
         return;
       }
 
-      // Android/iOS: Google Sign-In thật 
       await _initializeGoogleSignIn();
       final GoogleSignInAccount account = await _googleSignIn.authenticate(
         scopeHint: const ['email', 'profile'],
       );
-      
-      final GoogleSignInAuthentication auth = account.authentication;
-      
-      // idToken chỉ có khi cấu hình serverClientId/Web OAuth client.
-      // Fallback account.id giúp app lưu session local trong giai đoạn chưa có backend.
-      final String sessionToken = auth.idToken ?? account.id;
-      
-      await AuthService.to.saveSession(
-        newToken:     sessionToken,
-        newUserId:    account.id,
-        newUserName:  account.displayName ?? '',
-        newUserEmail: account.email,
-        newPhotoUrl:  account.photoUrl ?? '',
-      );
 
+      final GoogleSignInAuthentication auth = account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        errorMessage.value =
+            'Không lấy được idToken Google. Kiểm tra Web OAuth client ID trên Google Cloud.';
+        return;
+      }
+
+      await _signInViaGoogleToken(idToken);
       Get.offAllNamed(AppRoutes.home);
 
     } on GoogleSignInException catch (e) {
       errorMessage.value = _mapGoogleSignInError(e);
+    } on ApiException catch (e) {
+      errorMessage.value = e.message;
     } catch (e) {
       errorMessage.value = 'Đăng nhập thất bại. Vui lòng thử lại.';
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> _signInViaGoogleToken(String idToken) async {
+    final data = await ApiService.to.post(
+      '/api/auth/google',
+      body: {'idToken': idToken},
+    );
+    await _saveAuthResponse(data as Map<String, dynamic>);
+  }
+
+  /// Web chưa có Google Sign-In widget — dùng dev endpoint khi API chạy Development.
+  Future<void> _signInViaApiDev() async {
+    final data = await ApiService.to.post('/api/auth/dev');
+    await _saveAuthResponse(data as Map<String, dynamic>);
+  }
+
+  Future<void> _saveAuthResponse(Map<String, dynamic> data) async {
+    await AuthService.to.saveSession(
+      newToken:     data['token'] as String? ?? '',
+      newUserId:    data['userId'] as String? ?? '',
+      newUserName:  data['displayName'] as String? ?? '',
+      newUserEmail: data['email'] as String? ?? '',
+      newPhotoUrl:  data['photoUrl'] as String? ?? '',
+    );
   }
 
 

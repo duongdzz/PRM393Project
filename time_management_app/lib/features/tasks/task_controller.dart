@@ -1,4 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/task_repository.dart';
 
 enum TaskStatus   { todo, inProgress, done, cancelled }
 enum TaskPriority { low, medium, high, urgent }
@@ -85,6 +89,28 @@ class SubTask {
 
 class TaskController extends GetxController {
   final tasks = <TaskModel>[].obs;
+  final isLoading = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadTasks();
+  }
+
+  Future<void> loadTasks() async {
+    if (!AuthService.to.useApi) return;
+
+    try {
+      isLoading.value = true;
+      tasks.assignAll(await TaskRepository.to.fetchAll());
+    } on ApiException catch (e) {
+      Get.snackbar('Lỗi', e.message,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16));
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   List<TaskModel> get overdueTasks =>
       tasks.where((t) => t.isOverdue).toList();
@@ -132,9 +158,22 @@ class TaskController extends GetxController {
       ..sort((a, b) => b.priority.index.compareTo(a.priority.index));
   }
 
-  void addTask(TaskModel task) => tasks.add(task);
+  Future<String?> addTask(TaskModel task) async {
+    if (!AuthService.to.useApi) {
+      tasks.add(task);
+      return null;
+    }
 
-  String? tryMarkDone(String taskId, {DateTime? onDate}) {
+    try {
+      final created = await TaskRepository.to.create(task);
+      tasks.add(created);
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    }
+  }
+
+  Future<String?> tryMarkDone(String taskId, {DateTime? onDate}) async {
     final task = tasks.firstWhereOrNull((t) => t.id == taskId);
     if (task == null) return 'Task không tồn tại';
     if (!task.canMarkDone) {
@@ -144,13 +183,31 @@ class TaskController extends GetxController {
     final day = dateOnly(onDate ?? DateTime.now());
 
     if (task.recurrence == RecurrenceType.once) {
-      task.status = TaskStatus.done;
+      if (task.status == TaskStatus.done) return null;
     } else {
       if (!occursOn(task, day)) return 'Công việc không có trong ngày này';
-      task.completedDates.add(dateKey(day));
+      if (task.completedDates.contains(dateKey(day))) return null;
     }
-    task.updatedAt = DateTime.now();
-    tasks.refresh();
-    return null;
+
+    if (!AuthService.to.useApi) {
+      if (task.recurrence == RecurrenceType.once) {
+        task.status = TaskStatus.done;
+      } else {
+        task.completedDates.add(dateKey(day));
+      }
+      task.updatedAt = DateTime.now();
+      tasks.refresh();
+      return null;
+    }
+
+    try {
+      final updated = await TaskRepository.to.complete(taskId, day);
+      final index = tasks.indexWhere((t) => t.id == taskId);
+      if (index >= 0) tasks[index] = updated;
+      tasks.refresh();
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    }
   }
 }

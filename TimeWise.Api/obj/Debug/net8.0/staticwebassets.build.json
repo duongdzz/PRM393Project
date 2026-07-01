@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "LxpHjdE8Wv3v+/AQLIr/9wGAOPsvZ1TTtkWlj5eG8bA=",
+  "Source": "TimeWise.Api",
+  "BasePath": "_content/TimeWise.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

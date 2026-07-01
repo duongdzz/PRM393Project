@@ -56,7 +56,7 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildProgressCard(focusMin),
-                const SizedBox(height: 20),
+                const SizedBox(height: 22),
 
                 Row(
                   children: [
@@ -170,28 +170,47 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatCard(String value, String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 8),
-          Text(value, style: const TextStyle(color: AppColors.onSurface, fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 2),
-          Text(label, style: const TextStyle(color: AppColors.tertiary, fontSize: 11), textAlign: TextAlign.center),
-        ],
+    return SizedBox(
+      height: 110,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.onSurface, fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 2),
+            SizedBox(
+              height: 26,
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.tertiary, fontSize: 11, height: 1.15),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -296,8 +315,9 @@ class _TodayTaskTile extends StatelessWidget {
           ),
           if (!isDone)
             GestureDetector(
-              onTap: () {
-                final error = controller.tryMarkDone(task.id, onDate: occurrenceDate);
+              onTap: () async {
+                final error =
+                    await controller.tryMarkDone(task.id, onDate: occurrenceDate);
                 if (error != null) {
                   Get.snackbar('Không thể hoàn thành', error,
                       backgroundColor: AppColors.surface,

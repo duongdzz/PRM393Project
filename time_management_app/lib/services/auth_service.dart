@@ -37,9 +37,14 @@ class AuthService extends GetxService {
   // ── Kiểm tra session còn hợp lệ không ────────────────────────────────────────
   Future<bool> checkSession() async {
     if (token.value.isEmpty) return false;
-
-    return true; 
+    return true;
   }
+
+  /// Khách xem thử — dữ liệu local, không gọi API.
+  bool get isGuest => token.value == 'guest_token';
+
+  /// Đã đăng nhập Google/API — sync qua backend.
+  bool get useApi => token.value.isNotEmpty && !isGuest;
 
   // ── Lưu session sau đăng nhập thành công ─────────────────────────────────────
   Future<void> saveSession({

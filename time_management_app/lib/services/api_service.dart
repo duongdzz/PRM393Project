@@ -15,7 +15,7 @@ class ApiService extends GetxService {
 
   late final Dio _dio;
 
-  static const String baseUrl = 'http://10.0.2.2:5000';
+  static const String baseUrl = 'http://192.168.0.104:5000';
 
   Future<ApiService> init() async {
     _dio = Dio(BaseOptions(
@@ -27,16 +27,15 @@ class ApiService extends GetxService {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        final token = AuthService.to.token.value;
-        if (token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+        final auth = AuthService.to;
+        if (auth.useApi && auth.token.value.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer ${auth.token.value}';
         }
         handler.next(options);
       },
 
       onError: (DioException e, handler) {
-        // token hết hạn thì đăng xuất
-        if (e.response?.statusCode == 401) {
+        if (e.response?.statusCode == 401 && AuthService.to.useApi) {
           AuthService.to.clearSession();
           Get.offAllNamed('/login');
         }
@@ -58,9 +57,17 @@ class ApiService extends GetxService {
   }
 
   // ── POST ──────────────────────────────────────────────────────────────────────
-  Future<dynamic> post(String path, {required Map<String, dynamic> body}) async {
+  Future<dynamic> post(
+    String path, {
+    Map<String, dynamic> body = const {},
+    Map<String, dynamic>? queryParams,
+  }) async {
     try {
-      final res = await _dio.post(path, data: body);
+      final res = await _dio.post(
+        path,
+        data: body,
+        queryParameters: queryParams,
+      );
       return res.data;
     } on DioException catch (e) {
       throw _handleError(e);

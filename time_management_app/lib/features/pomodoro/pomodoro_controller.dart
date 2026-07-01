@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../services/auth_service.dart';
+import '../../services/pomodoro_repository.dart';
 import 'package:flutter/material.dart';
 
 enum PomodoroStatus { idle, running, paused, finished }
@@ -38,6 +40,22 @@ class PomodoroController extends GetxController {
 
   Timer? _timer;
   PomodoroSession? _currentSession;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadSessions();
+  }
+
+  Future<void> loadSessions() async {
+    if (!AuthService.to.useApi) return;
+
+    try {
+      final list = await PomodoroRepository.to.fetchToday();
+      sessions.assignAll(list);
+      completedWork.value = todayCompletedSessions;
+    } catch (_) {}
+  }
 
   // ── Computed ─────────────────────────────────────────────────────────────────
   int get totalSeconds {
@@ -155,8 +173,17 @@ class PomodoroController extends GetxController {
     if (_currentSession == null) return;
     _currentSession!.endedAt  = DateTime.now();
     _currentSession!.completed = !interrupted;
-    sessions.add(_currentSession!);
+    final finished = _currentSession!;
+    sessions.add(finished);
     _currentSession = null;
+    _syncSession(finished);
+  }
+
+  void _syncSession(PomodoroSession session) {
+    if (!AuthService.to.useApi) return;
+    PomodoroRepository.to
+        .create(session, taskTitle: currentTask.value)
+        .catchError((_) {});
   }
 
   void _onSessionFinished() {
