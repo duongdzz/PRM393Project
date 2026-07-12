@@ -9,6 +9,7 @@ import '../profile/profile_screen.dart';
 import '../tasks/task_controller.dart';
 import '../tasks/widgets/add_task_sheet.dart';
 import '../pomodoro/pomodoro_controller.dart';
+import '../pomodoro/widgets/focus_picker_sheet.dart';
 import '../../services/auth_service.dart';
 import '../../shared/theme/app_theme.dart';
 
@@ -70,10 +71,21 @@ class HomeScreen extends StatelessWidget {
       // ── Body: chỉ build tab đang hiển thị (tránh rebuild ngầm khi gõ phím) ──
       body: Obx(() => _buildTab(controller.currentIndex.value)),
 
-      // ── Nút + thêm công việc (ẩn ở tab Pomodoro & Hồ sơ) ─────────────────────
+      // ── FAB: Pomodoro → Focus | các tab khác → thêm task | Hồ sơ → ẩn ─────
       floatingActionButton: Obx(() {
         final index = controller.currentIndex.value;
-        if (index == 1 || index == 4) return const SizedBox.shrink();
+        if (index == 4) return const SizedBox.shrink();
+        if (index == 1) {
+          return FloatingActionButton(
+            onPressed: () => showFocusPickerSheet(context),
+            backgroundColor: AppColors.primary,
+            child: const Icon(
+              Icons.center_focus_strong_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          );
+        }
         return FloatingActionButton(
           onPressed: () => showAddTaskSheet(context, Get.find<TaskController>()),
           backgroundColor: AppColors.primary,

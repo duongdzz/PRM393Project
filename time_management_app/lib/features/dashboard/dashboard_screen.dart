@@ -4,18 +4,18 @@ import '../../services/auth_service.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/task_tile.dart';
 import '../../models/task_model.dart';
+import '../home/home_controller.dart';
 import '../tasks/task_controller.dart';
 import '../pomodoro/pomodoro_controller.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  static const int _dailyGoalMinutes = 480;
-
   @override
   Widget build(BuildContext context) {
     final taskC = Get.find<TaskController>();
     final pomoC = Get.find<PomodoroController>();
+    final homeC = Get.find<HomeController>();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
@@ -51,13 +51,13 @@ class DashboardScreen extends StatelessWidget {
                 .where((t) => taskC.isDoneOn(t, now))
                 .length;
 
-            final focusMin = pomoC.todayFocusMinutes;
-            final sessions = pomoC.todayCompletedSessions;
+            final focusMin = pomoC.todayFocusMinutes.value;
+            final sessions = pomoC.todayCompletedSessions.value;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProgressCard(focusMin),
+                _buildProgressCard(context, homeC, pomoC),
                 const SizedBox(height: 22),
 
                 Row(
@@ -120,58 +120,165 @@ class DashboardScreen extends StatelessWidget {
     return '${days[now.weekday % 7]}, ${now.day}/${now.month}/${now.year}';
   }
 
-  Widget _buildProgressCard(int focusMin) {
-    final progress = (focusMin / _dailyGoalMinutes).clamp(0.0, 1.0);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: AppColors.skyGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha:0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+  Widget _buildProgressCard(
+    BuildContext context,
+    HomeController homeC,
+    PomodoroController pomoC,
+  ) {
+    return Obx(() {
+      final goal = homeC.dailyGoalMinutes.value;
+      final focusMin = pomoC.todayFocusMinutes.value;
+      final progress = goal > 0 ? (focusMin / goal).clamp(0.0, 1.0) : 0.0;
+
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: AppColors.skyGradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Mục tiêu hôm nay', style: TextStyle(color: Colors.white70, fontSize: 13)),
-              Text('$focusMin / $_dailyGoalMinutes phút',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.white.withValues(alpha:0.3),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-              minHeight: 8,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha:0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Mục tiêu hôm nay',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ),
+                Text(
+                  '$focusMin / $goal phút',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () => _showDailyGoalDialog(context, homeC),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.edit_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.white.withValues(alpha:0.3),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                minHeight: 8,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              focusMin == 0
+                  ? 'Bắt đầu ngày mới thôi! 💪'
+                  : progress >= 1.0
+                      ? 'Hoàn thành mục tiêu hôm nay! 🎉'
+                      : 'Đang tập trung tốt, tiếp tục nhé! 🔥',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Future<void> _showDailyGoalDialog(
+    BuildContext context,
+    HomeController homeC,
+  ) async {
+    final controller = TextEditingController(
+      text: '${homeC.dailyGoalMinutes.value}',
+    );
+
+    final saved = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Đặt mục tiêu hôm nay'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Nhập số phút tập trung bạn muốn đạt mỗi ngày.',
+              style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Mục tiêu (phút)',
+                suffixText: 'phút',
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Gợi ý: 60, 120, 240, 480 phút',
+              style: TextStyle(color: AppColors.tertiary, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Hủy'),
           ),
-          const SizedBox(height: 8),
-          Text(
-            focusMin == 0
-                ? 'Bắt đầu ngày mới thôi! 💪'
-                : progress >= 1.0
-                    ? 'Hoàn thành mục tiêu hôm nay! 🎉'
-                    : 'Đang tập trung tốt, tiếp tục nhé! 🔥',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Lưu'),
           ),
         ],
       ),
     );
+
+    if (saved != true) return;
+
+    final minutes = int.tryParse(controller.text.trim());
+    if (minutes == null) {
+      Get.snackbar(
+        'Không hợp lệ',
+        'Vui lòng nhập số phút (1–1440).',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    final ok = await homeC.setDailyGoal(minutes);
+    if (!ok) {
+      Get.snackbar(
+        'Không hợp lệ',
+        'Mục tiêu phải từ 1 đến 1440 phút (24 giờ).',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    }
   }
 
   Widget _buildStatCard(String value, String label, IconData icon, Color color) {

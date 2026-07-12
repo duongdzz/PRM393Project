@@ -14,7 +14,9 @@ class ApiService extends GetxService {
 
   late final Dio _dio;
 
-  static const String baseUrl = 'http://192.168.0.104:5000';
+  // Điện thoại thật: dùng IP Wi-Fi của PC (ipconfig → Wi-Fi IPv4), cùng mạng LAN.
+  // Emulator Android: http://10.0.2.2:5000
+  static const String baseUrl = 'http://192.168.0.101:5000';
 
   Future<ApiService> init() async {
     _dio = Dio(BaseOptions(
@@ -89,7 +91,10 @@ class ApiService extends GetxService {
       return ApiException('Kết nối quá chậm, vui lòng thử lại.');
     }
     if (e.type == DioExceptionType.connectionError) {
-      return ApiException('Không thể kết nối server. Kiểm tra mạng.');
+      return ApiException(
+        'Không kết nối được API server ($baseUrl). '
+        'Kiểm tra API đang chạy, IP Wi-Fi PC đúng, và điện thoại cùng mạng Wi-Fi.',
+      );
     }
 
     final statusCode = e.response?.statusCode;

@@ -23,6 +23,17 @@ DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 String dateKey(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+/// API có thể trả "2026-7-13", app dùng "2026-07-13" — chuẩn hóa để so khớp.
+String normalizeDateKey(String raw) {
+  final parts = raw.split('-');
+  if (parts.length != 3) return raw;
+  final y = int.tryParse(parts[0]);
+  final m = int.tryParse(parts[1]);
+  final d = int.tryParse(parts[2]);
+  if (y == null || m == null || d == null) return raw;
+  return dateKey(DateTime(y, m, d));
+}
+
 bool isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 

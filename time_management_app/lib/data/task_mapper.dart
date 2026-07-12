@@ -20,7 +20,7 @@ class TaskMapper {
             .map((e) => e as int)
             .toList(),
         completedDates: (json['completedDates'] as List<dynamic>? ?? [])
-            .map((e) => e.toString())
+            .map((e) => normalizeDateKey(e.toString()))
             .toSet(),
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
@@ -44,6 +44,24 @@ class TaskMapper {
         'weekDays': task.weekDays,
         'subTasks': task.subTasks
             .map((s) => {'title': s.title, 'isDone': s.isDone})
+            .toList(),
+      };
+
+  static Map<String, dynamic> toJson(TaskModel task) => {
+        'id': task.id,
+        'title': task.title,
+        'description': task.description,
+        'status': task.status.index,
+        'priority': task.priority.index,
+        'recurrence': task.recurrence.index,
+        if (task.deadline != null) 'deadline': dateKey(task.deadline!),
+        if (task.startDate != null) 'startDate': dateKey(task.startDate!),
+        'weekDays': task.weekDays,
+        'completedDates': task.completedDates.toList(),
+        'createdAt': task.createdAt.toIso8601String(),
+        'updatedAt': task.updatedAt.toIso8601String(),
+        'subTasks': task.subTasks
+            .map((s) => {'id': s.id, 'title': s.title, 'isDone': s.isDone})
             .toList(),
       };
 }

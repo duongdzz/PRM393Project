@@ -152,18 +152,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
               final cellIndex = row * 7 + col;
               final dayNum = cellIndex - leadingBlanks + 1;
               if (dayNum < 1 || dayNum > daysInMonth) {
-                return const Expanded(child: SizedBox(height: 48));
+                return const Expanded(child: SizedBox(height: 52));
               }
               final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
               final isSelected = isSameDay(date, _selectedDay);
               final isToday = isSameDay(date, today);
-              final hasTasks = _c.tasksOn(date).isNotEmpty;
+              final dayTasks = _c.tasksOn(date);
 
               return Expanded(
                 child: GestureDetector(
                   onTap: () => setState(() => _selectedDay = date),
                   child: Container(
-                    height: 48,
+                    height: 52,
                     margin: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       color: isSelected ? AppColors.primary : Colors.transparent,
@@ -187,16 +187,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 : FontWeight.w400,
                           ),
                         ),
-                        const SizedBox(height: 3),
-                        Container(
-                          width: 5, height: 5,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: hasTasks
-                                ? (isSelected ? Colors.white : AppColors.warning)
-                                : Colors.transparent,
-                          ),
-                        ),
+                        const SizedBox(height: 4),
+                        _buildDayPriorityDots(date, dayTasks, isSelected),
                       ],
                     ),
                   ),
@@ -205,6 +197,54 @@ class _CalendarScreenState extends State<CalendarScreen> {
             }),
           );
         }),
+      ),
+    );
+  }
+
+  /// Tối đa 3 chấm màu theo mức ưu tiên — nhìn lưới lịch biết ngày đó có việc gì.
+  Widget _buildDayPriorityDots(
+    DateTime date,
+    List<TaskModel> tasks,
+    bool isSelected,
+  ) {
+    if (tasks.isEmpty) {
+      return const SizedBox(height: 6);
+    }
+
+    return SizedBox(
+      height: 6,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ...tasks.take(3).map((task) {
+            final isDone = _c.isDoneOn(task, date);
+            final color = isSelected
+                ? Colors.white
+                : (isDone ? AppColors.success : priorityColor(task.priority));
+            return Container(
+              width: 5,
+              height: 5,
+              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color,
+              ),
+            );
+          }),
+          if (tasks.length > 3)
+            Padding(
+              padding: const EdgeInsets.only(left: 2),
+              child: Text(
+                '+',
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white70 : AppColors.tertiary,
+                  height: 1,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

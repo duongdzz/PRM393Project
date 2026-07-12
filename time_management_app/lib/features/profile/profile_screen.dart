@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../services/auth_service.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/theme/app_theme.dart';
+import '../tasks/task_controller.dart';
+import '../pomodoro/pomodoro_controller.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -180,6 +182,12 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildLogoutButton() {
     return GestureDetector(
       onTap: () async {
+        if (Get.isRegistered<TaskController>()) {
+          Get.delete<TaskController>(force: true);
+        }
+        if (Get.isRegistered<PomodoroController>()) {
+          Get.delete<PomodoroController>(force: true);
+        }
         await AuthService.to.clearSession();
         Get.offAllNamed(AppRoutes.login);
       },

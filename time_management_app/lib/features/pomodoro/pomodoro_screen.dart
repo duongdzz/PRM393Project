@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'pomodoro_controller.dart';
-import 'widgets/focus_picker_sheet.dart';
 import '../../models/pomodoro_model.dart';
 import '../tasks/task_controller.dart';
 import '../../shared/theme/app_theme.dart';
@@ -28,8 +27,8 @@ class PomodoroScreen extends StatelessWidget {
 
               const SizedBox(height: 40),
 
-              // ── Circular timer ─────────────────────────────────────────────
-              _CircularTimer(controller: c),
+              // ── Circular timer + chỉnh phút ────────────────────────────────
+              _TimerWithAdjustors(controller: c),
 
               const SizedBox(height: 32),
 
@@ -57,6 +56,7 @@ class PomodoroScreen extends StatelessWidget {
               _TodayStats(controller: c),
 
               const SizedBox(height: 24),
+              const SizedBox(height: 80),
             ],
           ),
         ),
@@ -121,14 +121,100 @@ class _SessionTypeBar extends StatelessWidget {
   }
 }
 
+// ── Timer + nút +/- 1 phút ────────────────────────────────────────────────────
+
+class _TimerWithAdjustors extends StatelessWidget {
+  final PomodoroController controller;
+  const _TimerWithAdjustors({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const btnSize = 40.0;
+        const gap = 8.0;
+        final timerSize = (constraints.maxWidth - 2 * btnSize - 2 * gap)
+            .clamp(180.0, 240.0);
+
+        return Obx(() {
+          final canAdjust = controller.canAdjustDuration;
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _DurationAdjustButton(
+                size: btnSize,
+                icon: Icons.remove_rounded,
+                enabled: canAdjust,
+                onTap: () => controller.adjustDuration(-1),
+              ),
+              SizedBox(width: gap),
+              _CircularTimer(controller: controller, size: timerSize),
+              SizedBox(width: gap),
+              _DurationAdjustButton(
+                size: btnSize,
+                icon: Icons.add_rounded,
+                enabled: canAdjust,
+                onTap: () => controller.adjustDuration(1),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+}
+
+class _DurationAdjustButton extends StatelessWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+  final double size;
+
+  const _DurationAdjustButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+    this.size = 44,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: enabled ? AppColors.border : AppColors.border.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Icon(
+          icon,
+          size: size * 0.55,
+          color: enabled ? AppColors.onSurface : AppColors.tertiary,
+        ),
+      ),
+    );
+  }
+}
+
 // ── Circular Timer ────────────────────────────────────────────────────────────
 
 class _CircularTimer extends StatelessWidget {
   final PomodoroController controller;
-  const _CircularTimer({required this.controller});
+  final double size;
+  const _CircularTimer({required this.controller, this.size = 240});
 
   @override
   Widget build(BuildContext context) {
+    final timeFontSize = size * 0.22;
+    final labelFontSize = size * 0.05;
+    final playIconSize = size * 0.11;
+
     return Obx(() => GestureDetector(
       onTap: () {
         switch (controller.status.value) {
@@ -145,8 +231,8 @@ class _CircularTimer extends StatelessWidget {
         }
       },
       child: SizedBox(
-        width: 260,
-        height: 260,
+        width: size,
+        height: size,
         child: RepaintBoundary(
           child: CustomPaint(
             painter: _TimerPainter(
@@ -157,30 +243,30 @@ class _CircularTimer extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Thời gian
-                Text(
-                  controller.timeDisplay,
-                  style: const TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.w300,
-                    color: AppColors.onSurface,
-                    letterSpacing: -2,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    controller.timeDisplay,
+                    style: TextStyle(
+                      fontSize: timeFontSize,
+                      fontWeight: FontWeight.w300,
+                      color: AppColors.onSurface,
+                      letterSpacing: -2,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                // Loại phiên
+                SizedBox(height: size * 0.015),
                 Text(
                   controller.sessionLabel,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: labelFontSize,
                     color: controller.sessionColor,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1.5,
+                    letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 12),
-                // Icon trạng thái (tap hint)
+                SizedBox(height: size * 0.045),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
@@ -189,7 +275,7 @@ class _CircularTimer extends StatelessWidget {
                         : Icons.play_arrow_rounded,
                     key: ValueKey(controller.status.value),
                     color: AppColors.tertiary,
-                    size: 28,
+                    size: playIconSize,
                   ),
                 ),
               ],
@@ -343,7 +429,7 @@ class _FocusSection extends StatelessWidget {
             const SizedBox(height: 12),
             if (ids.isEmpty)
               const Text(
-                'Chưa chọn danh sách ưu tiên. Pomodoro sẽ tự chọn task khi bạn thiết lập Focus.',
+                'Nhấn nút Focus góc dưới để chọn danh sách ưu tiên hôm nay.',
                 style: TextStyle(color: AppColors.tertiary, fontSize: 12),
               )
             else
@@ -379,22 +465,6 @@ class _FocusSection extends StatelessWidget {
                   );
                 }).toList(),
               ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => showFocusPickerSheet(context),
-                icon: const Icon(Icons.playlist_add_check_rounded, size: 18),
-                label: Text(ids.isEmpty ? 'Chọn task Focus' : 'Sửa danh sách Focus'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       );
@@ -410,59 +480,55 @@ class _TaskInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => GestureDetector(
-      onTap: () => showFocusPickerSheet(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: controller.currentTask.value.isNotEmpty
-                ? AppColors.primary.withValues(alpha:0.4)
-                : AppColors.border,
-          ),
+    return Obx(() => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: controller.currentTask.value.isNotEmpty
+              ? AppColors.primary.withValues(alpha:0.4)
+              : AppColors.border,
         ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.task_alt_rounded,
-              size: 18,
-              color: controller.currentTask.value.isNotEmpty
-                  ? AppColors.primary
-                  : AppColors.tertiary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.task_alt_rounded,
+            size: 18,
+            color: controller.currentTask.value.isNotEmpty
+                ? AppColors.primary
+                : AppColors.tertiary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  controller.currentTask.value.isNotEmpty
+                      ? controller.currentTask.value
+                      : 'Chưa chọn công việc đang làm',
+                  style: TextStyle(
+                    color: controller.currentTask.value.isNotEmpty
+                        ? AppColors.onSurface
+                        : AppColors.tertiary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (controller.focusTaskIds.isNotEmpty)
                   Text(
-                    controller.currentTask.value.isNotEmpty
-                        ? controller.currentTask.value
-                        : 'Chọn công việc đang làm...',
-                    style: TextStyle(
-                      color: controller.currentTask.value.isNotEmpty
-                          ? AppColors.onSurface
-                          : AppColors.tertiary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                    'Từ danh sách Focus ${controller.focusProgressLabel}',
+                    style: const TextStyle(
+                      color: AppColors.tertiary,
+                      fontSize: 11,
                     ),
                   ),
-                  if (controller.focusTaskIds.isNotEmpty)
-                    Text(
-                      'Từ danh sách Focus ${controller.focusProgressLabel}',
-                      style: const TextStyle(
-                        color: AppColors.tertiary,
-                        fontSize: 11,
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
-            Icon(Icons.expand_more_rounded, color: AppColors.tertiary, size: 20),
-          ],
-        ),
+          ),
+        ],
       ),
     ));
   }
@@ -590,14 +656,14 @@ class _TodayStats extends StatelessWidget {
       child: Row(
         children: [
           _StatItem(
-            value: '${controller.todayCompletedSessions}',
+            value: '${controller.todayCompletedSessions.value}',
             label: 'Phiên hôm nay',
             icon: Icons.local_fire_department_rounded,
             color: AppColors.error,
           ),
           _divider(),
           _StatItem(
-            value: '${controller.todayFocusMinutes}',
+            value: '${controller.todayFocusMinutes.value}',
             label: 'Phút tập trung',
             icon: Icons.timer_rounded,
             color: AppColors.primary,

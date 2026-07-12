@@ -14,10 +14,13 @@ import '../tasks/task_controller.dart';
 
 class PomodoroController extends GetxController with WidgetsBindingObserver {
   // ── Settings (phút) ──────────────────────────────────────────────────────────
-  final int workMinutes       = 25;
-  final int shortBreakMinutes = 5;
-  final int longBreakMinutes  = 15;
+  final workMinutes       = 25.obs;
+  final shortBreakMinutes = 5.obs;
+  final longBreakMinutes  = 15.obs;
   final int sessionsUntilLong = 4;
+
+  static const minMinutes = 1;
+  static const maxMinutes = 180;
 
   // ── State ────────────────────────────────────────────────────────────────────
   final status           = PomodoroStatus.idle.obs;
@@ -32,6 +35,8 @@ class PomodoroController extends GetxController with WidgetsBindingObserver {
 
   // ── History ──────────────────────────────────────────────────────────────────
   final sessions = <PomodoroSession>[].obs;
+  final todayFocusMinutes = 0.obs;
+  final todayCompletedSessions = 0.obs;
 
   Timer? _timer;
   PomodoroSession? _currentSession;
@@ -70,8 +75,43 @@ class PomodoroController extends GetxController with WidgetsBindingObserver {
     try {
       final list = await PomodoroRepository.to.fetchToday();
       sessions.assignAll(list);
-      completedWork.value = todayCompletedSessions;
+      completedWork.value = _countTodayWorkSessions();
+      _recalcTodayStats();
     } catch (_) {}
+  }
+
+  void _recalcTodayStats() {
+    final today = dateOnly(DateTime.now());
+    var focus = 0;
+    var count = 0;
+
+    for (final s in sessions) {
+      if (s.type != PomodoroType.work || !s.completed) continue;
+      if (!isSameDay(s.startedAt, today)) continue;
+      count++;
+      focus += _sessionDurationMinutes(s);
+    }
+
+    todayFocusMinutes.value = focus;
+    todayCompletedSessions.value = count;
+  }
+
+  int _countTodayWorkSessions() {
+    final today = dateOnly(DateTime.now());
+    return sessions
+        .where((s) =>
+            s.type == PomodoroType.work &&
+            s.completed &&
+            isSameDay(s.startedAt, today))
+        .length;
+  }
+
+  int _sessionDurationMinutes(PomodoroSession session) {
+    final ended = session.endedAt;
+    if (ended == null) return 0;
+    final seconds = ended.difference(session.startedAt).inSeconds;
+    if (seconds <= 0) return 0;
+    return (seconds / 60).ceil();
   }
 
   // ── Focus list logic ─────────────────────────────────────────────────────────
@@ -156,9 +196,44 @@ class PomodoroController extends GetxController with WidgetsBindingObserver {
 
   int get totalSeconds {
     switch (currentType.value) {
-      case PomodoroType.work:       return workMinutes * 60;
-      case PomodoroType.shortBreak: return shortBreakMinutes * 60;
-      case PomodoroType.longBreak:  return longBreakMinutes * 60;
+      case PomodoroType.work:       return workMinutes.value * 60;
+      case PomodoroType.shortBreak: return shortBreakMinutes.value * 60;
+      case PomodoroType.longBreak:  return longBreakMinutes.value * 60;
+    }
+  }
+
+  bool get canAdjustDuration =>
+      status.value == PomodoroStatus.idle ||
+      status.value == PomodoroStatus.finished;
+
+  void adjustDuration(int deltaMinutes) {
+    if (!canAdjustDuration || deltaMinutes == 0) return;
+
+    final current = _minutesForType(currentType.value);
+    final next = (current + deltaMinutes).clamp(minMinutes, maxMinutes);
+    _setMinutesForType(currentType.value, next);
+    remainingSeconds.value = totalSeconds;
+  }
+
+  int _minutesForType(PomodoroType type) {
+    switch (type) {
+      case PomodoroType.work:       return workMinutes.value;
+      case PomodoroType.shortBreak: return shortBreakMinutes.value;
+      case PomodoroType.longBreak:  return longBreakMinutes.value;
+    }
+  }
+
+  void _setMinutesForType(PomodoroType type, int minutes) {
+    switch (type) {
+      case PomodoroType.work:
+        workMinutes.value = minutes;
+        break;
+      case PomodoroType.shortBreak:
+        shortBreakMinutes.value = minutes;
+        break;
+      case PomodoroType.longBreak:
+        longBreakMinutes.value = minutes;
+        break;
     }
   }
 
@@ -319,6 +394,8 @@ class PomodoroController extends GetxController with WidgetsBindingObserver {
     _currentSession!.completed = !interrupted;
     final finished = _currentSession!;
     sessions.add(finished);
+    sessions.refresh();
+    _recalcTodayStats();
     _currentSession = null;
     _syncSession(finished);
   }
@@ -350,28 +427,9 @@ class PomodoroController extends GetxController with WidgetsBindingObserver {
     await NotificationService.to.cancelPomodoroEnd();
   }
 
-  // ── Today stats ──────────────────────────────────────────────────────────────
+  // ── Today stats (observable — dashboard đọc qua .value) ─────────────────────
 
-  int get todayFocusMinutes {
-    final today = DateTime.now();
-    return sessions
-        .where((s) =>
-            s.type == PomodoroType.work &&
-            s.completed &&
-            s.startedAt.day == today.day)
-        .fold(0, (sum, s) {
-      final dur = s.endedAt?.difference(s.startedAt).inMinutes ?? 0;
-      return sum + dur;
-    });
-  }
-
-  int get todayCompletedSessions {
-    final today = DateTime.now();
-    return sessions
-        .where((s) =>
-            s.type == PomodoroType.work &&
-            s.completed &&
-            s.startedAt.day == today.day)
-        .length;
-  }
+  // Giữ getter để tương thích code cũ.
+  int get todayFocusMinutesValue => todayFocusMinutes.value;
+  int get todayCompletedSessionsValue => todayCompletedSessions.value;
 }

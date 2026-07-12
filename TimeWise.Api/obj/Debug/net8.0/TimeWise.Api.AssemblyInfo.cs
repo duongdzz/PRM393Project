@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TimeWise.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4d27e214ef183e360fb661699c7131e3a01dd0c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8374f8fe3522947e4b71b08f5b88f75e39a92a25")]
 [assembly: System.Reflection.AssemblyProductAttribute("TimeWise.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TimeWise.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -66,11 +66,11 @@ class StatisticsScreen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(child: _statCard(
-                    '${pomoC.todayCompletedSessions}', 'Phiên tập trung',
+                    '${pomoC.todayCompletedSessions.value}', 'Phiên tập trung',
                     Icons.timer_rounded, AppColors.error)),
                   const SizedBox(width: 12),
                   Expanded(child: _statCard(
-                    '${pomoC.todayFocusMinutes}p', 'Thời gian focus',
+                    '${pomoC.todayFocusMinutes.value}p', 'Thời gian focus',
                     Icons.access_time_filled_rounded, AppColors.success)),
                 ],
               ),

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../models/task_model.dart';
 import '../../data/task_repository.dart';
+import '../../data/local_task_store.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../shared/theme/app_theme.dart';
 
 class TaskController extends GetxController {
   final tasks = <TaskModel>[].obs;
+  final markingTaskIds = <String>[].obs;
 
   @override
   void onInit() {
@@ -16,7 +18,10 @@ class TaskController extends GetxController {
   }
 
   Future<void> loadTasks() async {
-    if (!AuthService.to.useApi) return;
+    if (!AuthService.to.useApi) {
+      tasks.assignAll(await LocalTaskStore.to.load());
+      return;
+    }
 
     try {
       tasks.assignAll(await TaskRepository.to.fetchAll());
@@ -24,6 +29,12 @@ class TaskController extends GetxController {
       Get.snackbar('Lỗi', e.message,
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16));
+    }
+  }
+
+  Future<void> _persistGuestTasks() async {
+    if (!AuthService.to.useApi) {
+      await LocalTaskStore.to.save(tasks);
     }
   }
 
@@ -65,7 +76,8 @@ class TaskController extends GetxController {
     if (task.recurrence == RecurrenceType.once) {
       return task.status == TaskStatus.done;
     }
-    return task.completedDates.contains(dateKey(day));
+    final target = dateKey(day);
+    return task.completedDates.any((d) => normalizeDateKey(d) == target);
   }
 
   List<TaskModel> tasksOn(DateTime day) {
@@ -76,6 +88,7 @@ class TaskController extends GetxController {
   Future<String?> addTask(TaskModel task) async {
     if (!AuthService.to.useApi) {
       tasks.add(task);
+      await _persistGuestTasks();
       return null;
     }
 
@@ -88,7 +101,41 @@ class TaskController extends GetxController {
     }
   }
 
+  bool isMarkingDone(String taskId) => markingTaskIds.contains(taskId);
+
+  void _setMarking(String taskId, bool marking) {
+    if (marking) {
+      if (!markingTaskIds.contains(taskId)) markingTaskIds.add(taskId);
+    } else {
+      markingTaskIds.remove(taskId);
+    }
+  }
+
+  void _applyMarkDoneLocally(TaskModel task, DateTime day) {
+    if (task.recurrence == RecurrenceType.once) {
+      task.status = TaskStatus.done;
+    } else {
+      task.completedDates.add(dateKey(day));
+    }
+    task.updatedAt = DateTime.now();
+  }
+
+  void _revertMarkDoneLocally(
+    TaskModel task,
+    DateTime day, {
+    required TaskStatus previousStatus,
+    required Set<String> previousCompletedDates,
+  }) {
+    task.status = previousStatus;
+    task.completedDates
+      ..clear()
+      ..addAll(previousCompletedDates);
+    task.updatedAt = DateTime.now();
+  }
+
   Future<String?> tryMarkDone(String taskId, {DateTime? onDate}) async {
+    if (markingTaskIds.contains(taskId)) return null;
+
     final task = tasks.firstWhereOrNull((t) => t.id == taskId);
     if (task == null) return 'Task không tồn tại';
     if (!task.canMarkDone) {
@@ -101,17 +148,21 @@ class TaskController extends GetxController {
       if (task.status == TaskStatus.done) return null;
     } else {
       if (!occursOn(task, day)) return 'Công việc không có trong ngày này';
-      if (task.completedDates.contains(dateKey(day))) return null;
+      if (task.completedDates.any((d) => normalizeDateKey(d) == dateKey(day))) {
+        return null;
+      }
     }
 
+    final previousStatus = task.status;
+    final previousCompletedDates = Set<String>.from(task.completedDates);
+
+    _setMarking(taskId, true);
+    _applyMarkDoneLocally(task, day);
+    tasks.refresh();
+
     if (!AuthService.to.useApi) {
-      if (task.recurrence == RecurrenceType.once) {
-        task.status = TaskStatus.done;
-      } else {
-        task.completedDates.add(dateKey(day));
-      }
-      task.updatedAt = DateTime.now();
-      tasks.refresh();
+      _setMarking(taskId, false);
+      _persistGuestTasks();
       return null;
     }
 
@@ -122,7 +173,25 @@ class TaskController extends GetxController {
       tasks.refresh();
       return null;
     } on ApiException catch (e) {
+      _revertMarkDoneLocally(
+        task,
+        day,
+        previousStatus: previousStatus,
+        previousCompletedDates: previousCompletedDates,
+      );
+      tasks.refresh();
       return e.message;
+    } catch (_) {
+      _revertMarkDoneLocally(
+        task,
+        day,
+        previousStatus: previousStatus,
+        previousCompletedDates: previousCompletedDates,
+      );
+      tasks.refresh();
+      return 'Không thể hoàn thành công việc';
+    } finally {
+      _setMarking(taskId, false);
     }
   }
 
@@ -144,6 +213,7 @@ class TaskController extends GetxController {
   Future<String?> deleteTask(String taskId) async {
     if (!AuthService.to.useApi) {
       tasks.removeWhere((t) => t.id == taskId);
+      await _persistGuestTasks();
       return null;
     }
 
