@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../models/task_model.dart';
 import '../tasks/task_controller.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/task_tile.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -11,7 +13,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  final TaskController _c = Get.put(TaskController());
+  final TaskController _c = Get.find<TaskController>();
 
   late DateTime _focusedMonth;
   late DateTime _selectedDay;
@@ -29,11 +31,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _focusedMonth = DateTime(now.year, now.month);
     _selectedDay  = DateTime(now.year, now.month, now.day);
   }
-
-  bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  List<TaskModel> _tasksOn(DateTime day) => _c.tasksOn(day);
 
   void _changeMonth(int delta) {
     setState(() {
@@ -158,9 +155,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 return const Expanded(child: SizedBox(height: 48));
               }
               final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
-              final isSelected = _isSameDay(date, _selectedDay);
-              final isToday = _isSameDay(date, today);
-              final hasTasks = _tasksOn(date).isNotEmpty;
+              final isSelected = isSameDay(date, _selectedDay);
+              final isToday = isSameDay(date, today);
+              final hasTasks = _c.tasksOn(date).isNotEmpty;
 
               return Expanded(
                 child: GestureDetector(
@@ -214,7 +211,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   // ── Task list for selected day ──────────────────────────────────────────────
   Widget _buildTaskListForDay() {
-    final tasks = _tasksOn(_selectedDay);
+    final tasks = _c.tasksOn(_selectedDay);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,7 +232,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: AppColors.primary.withValues(alpha:0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -253,125 +250,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.event_available_rounded,
-                          color: AppColors.tertiary.withOpacity(0.3), size: 52),
+                          color: AppColors.tertiary.withValues(alpha:0.3), size: 52),
                       const SizedBox(height: 10),
                       Text('Không có công việc ngày này',
-                          style: TextStyle(color: AppColors.tertiary.withOpacity(0.7), fontSize: 14)),
+                          style: TextStyle(color: AppColors.tertiary.withValues(alpha:0.7), fontSize: 14)),
                     ],
                   ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                   itemCount: tasks.length,
-                  itemBuilder: (_, i) => _CalendarTaskTile(
-                        task: tasks[i],
-                        controller: _c,
-                        occurrenceDate: _selectedDay,
-                      ),
+                  itemBuilder: (_, i) {
+                    final task = tasks[i];
+                    final subtitle = task.isRecurring
+                        ? task.recurrence.label
+                        : (task.deadline != null
+                            ? '${task.deadline!.day}/${task.deadline!.month}/${task.deadline!.year}'
+                            : '');
+                    return TaskTile(
+                      task: task,
+                      controller: _c,
+                      occurrenceDate: _selectedDay,
+                      subtitle: subtitle,
+                      backgroundColor: AppColors.surfaceVariant,
+                    );
+                  },
                 ),
         ),
       ],
-    );
-  }
-}
-
-// ── Task tile ─────────────────────────────────────────────────────────────────
-class _CalendarTaskTile extends StatelessWidget {
-  final TaskModel task;
-  final TaskController controller;
-  final DateTime occurrenceDate;
-  const _CalendarTaskTile({
-    required this.task,
-    required this.controller,
-    required this.occurrenceDate,
-  });
-
-  Color _priorityColor(TaskPriority p) {
-    switch (p) {
-      case TaskPriority.low:    return AppColors.tertiary;
-      case TaskPriority.medium: return AppColors.primary;
-      case TaskPriority.high:   return AppColors.warning;
-      case TaskPriority.urgent: return AppColors.error;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDone = controller.isDoneOn(task, occurrenceDate);
-    final subtitle = task.isRecurring
-        ? task.recurrence.label
-        : (task.deadline != null
-            ? '${task.deadline!.day}/${task.deadline!.month}/${task.deadline!.year}'
-            : '');
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 10, height: 10,
-            decoration: BoxDecoration(
-              color: _priorityColor(task.priority),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  task.title,
-                  style: TextStyle(
-                    color: isDone ? AppColors.tertiary : AppColors.onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    decoration: isDone ? TextDecoration.lineThrough : null,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      task.isRecurring ? Icons.repeat_rounded : Icons.calendar_today_outlined,
-                      size: 12,
-                      color: AppColors.tertiary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(subtitle,
-                        style: const TextStyle(color: AppColors.tertiary, fontSize: 12)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (!isDone)
-            GestureDetector(
-              onTap: () async {
-                final error =
-                    await controller.tryMarkDone(task.id, onDate: occurrenceDate);
-                if (error != null) {
-                  Get.snackbar('Không thể hoàn thành', error,
-                      backgroundColor: AppColors.surfaceVariant,
-                      colorText: AppColors.onSurface,
-                      snackPosition: SnackPosition.BOTTOM,
-                      margin: const EdgeInsets.all(16),
-                      borderRadius: 12);
-                }
-              },
-              child: const Icon(Icons.radio_button_unchecked_rounded,
-                  color: AppColors.tertiary, size: 22),
-            )
-          else
-            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 22),
-        ],
-      ),
     );
   }
 }

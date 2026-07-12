@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../services/auth_service.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/task_tile.dart';
+import '../../models/task_model.dart';
 import '../tasks/task_controller.dart';
 import '../pomodoro/pomodoro_controller.dart';
 
@@ -12,8 +14,8 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskC = Get.put(TaskController());
-    final pomoC = Get.put(PomodoroController());
+    final taskC = Get.find<TaskController>();
+    final pomoC = Get.find<PomodoroController>();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
@@ -89,10 +91,13 @@ class DashboardScreen extends StatelessWidget {
                 if (todayAll.isEmpty)
                   _buildEmptyState('Chưa có công việc lặp lại hôm nay', Icons.repeat_rounded)
                 else
-                  ...todayAll.map((t) => _TodayTaskTile(
+                  ...todayAll.map((t) => TaskTile(
                         task: t,
                         controller: taskC,
                         occurrenceDate: now,
+                        subtitle: taskC.isDoneOn(t, now)
+                            ? 'Đã hoàn thành'
+                            : t.recurrence.label,
                       )),
               ],
             );
@@ -128,7 +133,7 @@ class DashboardScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha:0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -150,7 +155,7 @@ class DashboardScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.white.withOpacity(0.3),
+              backgroundColor: Colors.white.withValues(alpha:0.3),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
               minHeight: 8,
             ),
@@ -180,7 +185,7 @@ class DashboardScreen extends StatelessWidget {
           border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.05),
+              color: AppColors.primary.withValues(alpha:0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -229,109 +234,6 @@ class DashboardScreen extends StatelessWidget {
           Icon(icon, color: AppColors.tertiary, size: 36),
           const SizedBox(height: 10),
           Text(message, style: const TextStyle(color: AppColors.tertiary, fontSize: 13)),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Today task tile ─────────────────────────────────────────────────────────
-class _TodayTaskTile extends StatelessWidget {
-  final TaskModel task;
-  final TaskController controller;
-  final DateTime occurrenceDate;
-  const _TodayTaskTile({
-    required this.task,
-    required this.controller,
-    required this.occurrenceDate,
-  });
-
-  Color _priorityColor(TaskPriority p) {
-    switch (p) {
-      case TaskPriority.low:    return AppColors.tertiary;
-      case TaskPriority.medium: return AppColors.primary;
-      case TaskPriority.high:   return AppColors.warning;
-      case TaskPriority.urgent: return AppColors.error;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDone = controller.isDoneOn(task, occurrenceDate);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDone ? AppColors.success.withOpacity(0.4) : AppColors.border,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 10, height: 10,
-            decoration: BoxDecoration(
-              color: isDone ? AppColors.success : _priorityColor(task.priority),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  task.title,
-                  style: TextStyle(
-                    color: isDone ? AppColors.tertiary : AppColors.onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    decoration: isDone ? TextDecoration.lineThrough : null,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      isDone ? Icons.check_circle_rounded : Icons.repeat_rounded,
-                      size: 12,
-                      color: isDone ? AppColors.success : AppColors.tertiary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isDone ? 'Đã hoàn thành' : task.recurrence.label,
-                      style: TextStyle(
-                        color: isDone ? AppColors.success : AppColors.tertiary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (!isDone)
-            GestureDetector(
-              onTap: () async {
-                final error =
-                    await controller.tryMarkDone(task.id, onDate: occurrenceDate);
-                if (error != null) {
-                  Get.snackbar('Không thể hoàn thành', error,
-                      backgroundColor: AppColors.surface,
-                      colorText: AppColors.onSurface,
-                      snackPosition: SnackPosition.BOTTOM,
-                      margin: const EdgeInsets.all(16),
-                      borderRadius: 12);
-                }
-              },
-              child: const Icon(Icons.radio_button_unchecked_rounded,
-                  color: AppColors.tertiary, size: 22),
-            )
-          else
-            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 22),
         ],
       ),
     );

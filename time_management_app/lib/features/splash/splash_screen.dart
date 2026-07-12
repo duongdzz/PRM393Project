@@ -26,7 +26,7 @@ class SplashScreen extends StatelessWidget {
                     // Logo
                     AnimatedBuilder(
                       animation: controller.logoAnimation,
-                      builder: (_, __) => Transform.scale(
+                      builder: (context, _) => Transform.scale(
                         scale: controller.logoAnimation.value,
                         child: Opacity(
                           opacity: controller.logoAnimation.value.clamp(0.0, 1.0),
@@ -40,7 +40,7 @@ class SplashScreen extends StatelessWidget {
                     // App name
                     AnimatedBuilder(
                       animation: controller.textAnimation,
-                      builder: (_, __) => Opacity(
+                      builder: (context, _) => Opacity(
                         opacity: controller.textAnimation.value,
                         child: Transform.translate(
                           offset: Offset(0, 20.0 * (1 - controller.textAnimation.value)),
@@ -80,7 +80,7 @@ class SplashScreen extends StatelessWidget {
                 right: 0,
                 child: AnimatedBuilder(
                   animation: controller.textAnimation,
-                  builder: (_, __) => Opacity(
+                  builder: (context, _) => Opacity(
                     opacity: controller.textAnimation.value,
                     child: Column(
                       children: [
@@ -132,7 +132,7 @@ class _LogoWidget extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.4),
+            color: AppColors.primary.withValues(alpha:0.4),
             blurRadius: 30,
             spreadRadius: 5,
           ),
@@ -178,7 +178,7 @@ class _AnimatedBackgroundState extends State<_AnimatedBackground>
     final size = MediaQuery.of(context).size;
     return AnimatedBuilder(
       animation: _controller,
-      builder: (_, __) => CustomPaint(
+      builder: (context, _) => CustomPaint(
         size: size,
         painter: _BackgroundPainter(_controller.value),
       ),
@@ -195,7 +195,7 @@ class _BackgroundPainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
 
     // Circle 1 — top left
-    paint.color = AppColors.primary.withOpacity(0.14 + 0.06 * progress);
+    paint.color = AppColors.primary.withValues(alpha:0.14 + 0.06 * progress);
     canvas.drawCircle(
       Offset(size.width * 0.1, size.height * 0.15),
       120 + 20 * progress,
@@ -203,7 +203,7 @@ class _BackgroundPainter extends CustomPainter {
     );
 
     // Circle 2 — top right
-    paint.color = AppColors.skyLight.withOpacity(0.16 + 0.05 * progress);
+    paint.color = AppColors.skyLight.withValues(alpha:0.16 + 0.05 * progress);
     canvas.drawCircle(
       Offset(size.width * 0.9, size.height * 0.1),
       90 + 15 * progress,
@@ -211,7 +211,7 @@ class _BackgroundPainter extends CustomPainter {
     );
 
     // Circle 3 — bottom center
-    paint.color = AppColors.primary.withOpacity(0.10 + 0.07 * (1 - progress));
+    paint.color = AppColors.primary.withValues(alpha:0.10 + 0.07 * (1 - progress));
     canvas.drawCircle(
       Offset(size.width * 0.5, size.height * 0.9),
       140 + 25 * (1 - progress),

@@ -1,6 +1,6 @@
-import '../features/tasks/task_controller.dart';
-import 'api_service.dart';
-import 'auth_service.dart';
+import '../models/task_model.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import 'task_mapper.dart';
 
 class TaskRepository {
@@ -25,13 +25,17 @@ class TaskRepository {
   }
 
   Future<TaskModel> complete(String taskId, DateTime onDate) async {
-    final date =
-        '${onDate.year}-${onDate.month.toString().padLeft(2, '0')}-${onDate.day.toString().padLeft(2, '0')}';
+    final date = dateKey(onDate);
     final data = await ApiService.to.post(
       '/api/tasks/$taskId/complete',
       body: {},
       queryParams: {'date': date},
     );
     return TaskMapper.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<void> delete(String taskId) async {
+    if (!AuthService.to.useApi) return;
+    await ApiService.to.delete('/api/tasks/$taskId');
   }
 }

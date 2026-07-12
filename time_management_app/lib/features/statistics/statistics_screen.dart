@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../models/task_model.dart';
 import '../tasks/task_controller.dart';
 import '../pomodoro/pomodoro_controller.dart';
 import '../../shared/theme/app_theme.dart';
@@ -9,8 +10,8 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskC = Get.put(TaskController());
-    final pomoC = Get.put(PomodoroController());
+    final taskC = Get.find<TaskController>();
+    final pomoC = Get.find<PomodoroController>();
 
     return Container(
       color: AppColors.background,
@@ -93,7 +94,7 @@ class StatisticsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha:0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -160,7 +161,7 @@ class StatisticsScreen extends StatelessWidget {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),

@@ -5,8 +5,7 @@ import 'auth_service.dart';
 // ── Custom Exception ──────────────────────────────────────────────────────────
 class ApiException implements Exception {
   final String message;
-  final int?   statusCode;
-  ApiException(this.message, {this.statusCode});
+  ApiException(this.message);
 }
 
 // ── ApiService ────────────────────────────────────────────────────────────────
@@ -74,21 +73,10 @@ class ApiService extends GetxService {
     }
   }
 
-  // ── PUT ───────────────────────────────────────────────────────────────────────
-  Future<dynamic> put(String path, {required Map<String, dynamic> body}) async {
-    try {
-      final res = await _dio.put(path, data: body);
-      return res.data;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
   // ── DELETE ────────────────────────────────────────────────────────────────────
-  Future<dynamic> delete(String path) async {
+  Future<void> delete(String path) async {
     try {
-      final res = await _dio.delete(path);
-      return res.data;
+      await _dio.delete(path);
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -109,6 +97,6 @@ class ApiService extends GetxService {
         ?? e.response?.data?['error']
         ?? 'Lỗi không xác định ($statusCode)';
 
-    return ApiException(message.toString(), statusCode: statusCode);
+    return ApiException(message.toString());
   }
 }

@@ -2,6 +2,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'pomodoro_controller.dart';
+import 'widgets/focus_picker_sheet.dart';
+import '../../models/pomodoro_model.dart';
+import '../tasks/task_controller.dart';
 import '../../shared/theme/app_theme.dart';
 
 class PomodoroScreen extends StatelessWidget {
@@ -9,7 +12,7 @@ class PomodoroScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.put(PomodoroController());
+    final c = Get.find<PomodoroController>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -35,7 +38,12 @@ class PomodoroScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // ── Task input ─────────────────────────────────────────────────
+              // ── Focus time ─────────────────────────────────────────────────
+              _FocusSection(controller: c),
+
+              const SizedBox(height: 16),
+
+              // ── Task đang làm ──────────────────────────────────────────────
               _TaskInput(controller: c),
 
               const SizedBox(height: 28),
@@ -139,12 +147,13 @@ class _CircularTimer extends StatelessWidget {
       child: SizedBox(
         width: 260,
         height: 260,
-        child: CustomPaint(
-          painter: _TimerPainter(
-            progress: controller.progress,
-            color:    controller.sessionColor,
-          ),
-          child: Center(
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: _TimerPainter(
+              progress: controller.progress,
+              color:    controller.sessionColor,
+            ),
+            child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -187,6 +196,7 @@ class _CircularTimer extends StatelessWidget {
             ),
           ),
         ),
+        ),
       ),
     ));
   }
@@ -205,7 +215,7 @@ class _TimerPainter extends CustomPainter {
 
     // Track (background ring)
     final trackPaint = Paint()
-      ..color  = color.withOpacity(0.15)
+      ..color  = color.withValues(alpha:0.15)
       ..style  = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap   = StrokeCap.round;
@@ -251,7 +261,7 @@ class _SessionDots extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final completed = controller.completedWork.value;
-      final total     = controller.sessionsUntilLong.value;
+      final total     = controller.sessionsUntilLong;
       final current   = completed % total;
 
       return Row(
@@ -270,12 +280,123 @@ class _SessionDots extends StatelessWidget {
               color: isDone
                   ? AppColors.primary
                   : isCurrent
-                  ? AppColors.primary.withOpacity(0.6)
+                  ? AppColors.primary.withValues(alpha:0.6)
                   : AppColors.surfaceVariant,
               borderRadius: BorderRadius.circular(5),
             ),
           );
         }),
+      );
+    });
+  }
+}
+
+// ── Focus Section ─────────────────────────────────────────────────────────────
+
+class _FocusSection extends StatelessWidget {
+  final PomodoroController controller;
+  const _FocusSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final ids = controller.focusTaskIds;
+      final taskC = Get.find<TaskController>();
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.center_focus_strong_rounded,
+                    color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Focus hôm nay',
+                    style: TextStyle(
+                      color: AppColors.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (ids.isNotEmpty)
+                  Text(
+                    controller.focusProgressLabel,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (ids.isEmpty)
+              const Text(
+                'Chưa chọn danh sách ưu tiên. Pomodoro sẽ tự chọn task khi bạn thiết lập Focus.',
+                style: TextStyle(color: AppColors.tertiary, fontSize: 12),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ids.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final id  = entry.value;
+                  final task = taskC.tasks.firstWhereOrNull((t) => t.id == id);
+                  if (task == null) return const SizedBox.shrink();
+                  final isActive = idx == controller.focusIndex.value;
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppColors.primary.withValues(alpha: 0.15)
+                          : AppColors.inputFill,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isActive ? AppColors.primary : AppColors.border,
+                      ),
+                    ),
+                    child: Text(
+                      task.title,
+                      style: TextStyle(
+                        color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => showFocusPickerSheet(context),
+                icon: const Icon(Icons.playlist_add_check_rounded, size: 18),
+                label: Text(ids.isEmpty ? 'Chọn task Focus' : 'Sửa danh sách Focus'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     });
   }
@@ -290,7 +411,7 @@ class _TaskInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() => GestureDetector(
-      onTap: () => _showTaskPicker(context),
+      onTap: () => showFocusPickerSheet(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -298,7 +419,7 @@ class _TaskInput extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: controller.currentTask.value.isNotEmpty
-                ? AppColors.primary.withOpacity(0.4)
+                ? AppColors.primary.withValues(alpha:0.4)
                 : AppColors.border,
           ),
         ),
@@ -313,16 +434,30 @@ class _TaskInput extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                controller.currentTask.value.isNotEmpty
-                    ? controller.currentTask.value
-                    : 'Chọn công việc đang làm...',
-                style: TextStyle(
-                  color: controller.currentTask.value.isNotEmpty
-                      ? AppColors.onSurface
-                      : AppColors.tertiary,
-                  fontSize: 14,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    controller.currentTask.value.isNotEmpty
+                        ? controller.currentTask.value
+                        : 'Chọn công việc đang làm...',
+                    style: TextStyle(
+                      color: controller.currentTask.value.isNotEmpty
+                          ? AppColors.onSurface
+                          : AppColors.tertiary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (controller.focusTaskIds.isNotEmpty)
+                    Text(
+                      'Từ danh sách Focus ${controller.focusProgressLabel}',
+                      style: const TextStyle(
+                        color: AppColors.tertiary,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
               ),
             ),
             Icon(Icons.expand_more_rounded, color: AppColors.tertiary, size: 20),
@@ -330,48 +465,6 @@ class _TaskInput extends StatelessWidget {
         ),
       ),
     ));
-  }
-
-  void _showTaskPicker(BuildContext context) {
-    // Placeholder — sau khi có TaskList sẽ load từ TaskController
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surfaceVariant,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Chọn công việc',
-                style: TextStyle(color: AppColors.onSurface, fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 16),
-
-            ...['Ôn tập Flutter', 'Làm báo cáo', 'Code project', 'Đọc tài liệu'].map(
-                  (task) => ListTile(
-                leading: const Icon(Icons.radio_button_unchecked, color: AppColors.primary),
-                title: Text(task, style: const TextStyle(color: AppColors.onSurface)),
-                onTap: () {
-                  controller.setTask(task);
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.clear, color: AppColors.tertiary),
-              title: const Text('Không chọn task', style: TextStyle(color: AppColors.tertiary)),
-              onTap: () {
-                controller.setTask('');
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -423,7 +516,7 @@ class _Controls extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: controller.sessionColor.withOpacity(0.4),
+                    color: controller.sessionColor.withValues(alpha:0.4),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),

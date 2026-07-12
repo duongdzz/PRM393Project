@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../models/task_model.dart';
 import '../task_controller.dart';
 import '../../../shared/theme/app_theme.dart';
 
@@ -10,7 +11,10 @@ void showAddTaskSheet(BuildContext context, TaskController controller) {
     backgroundColor: AppColors.surfaceVariant,
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => AddTaskSheet(controller: controller),
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+      child: AddTaskSheet(controller: controller),
+    ),
   );
 }
 
@@ -43,11 +47,9 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 24, right: 24, top: 20,
-      ),
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 20),
       child: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,9 +73,10 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
             TextField(
               controller: _titleCtrl,
               style: const TextStyle(color: AppColors.onSurface),
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 hintText: 'Tên công việc *',
-                hintStyle: TextStyle(color: AppColors.tertiary.withOpacity(0.7)),
+                hintStyle: TextStyle(color: AppColors.tertiary.withValues(alpha:0.7)),
                 filled: true,
                 fillColor: AppColors.inputFill,
                 border: OutlineInputBorder(
@@ -87,9 +90,10 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
               controller: _descCtrl,
               style: const TextStyle(color: AppColors.onSurface),
               maxLines: 2,
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 hintText: 'Mô tả (tuỳ chọn)',
-                hintStyle: TextStyle(color: AppColors.tertiary.withOpacity(0.7)),
+                hintStyle: TextStyle(color: AppColors.tertiary.withValues(alpha:0.7)),
                 filled: true,
                 fillColor: AppColors.inputFill,
                 border: OutlineInputBorder(
@@ -108,12 +112,11 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                 final selected = _recurrence == r;
                 return GestureDetector(
                   onTap: () => setState(() => _recurrence = r),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: selected
-                          ? AppColors.primary.withOpacity(0.15)
+                          ? AppColors.primary.withValues(alpha:0.15)
                           : AppColors.inputFill,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
@@ -156,7 +159,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
                           color: selected
-                              ? AppColors.primary.withOpacity(0.15)
+                              ? AppColors.primary.withValues(alpha:0.15)
                               : AppColors.inputFill,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
@@ -191,13 +194,12 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                 return Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => _priority = p),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                    child: Container(
                       margin: EdgeInsets.only(right: p != TaskPriority.urgent ? 8 : 0),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: selected
-                            ? colors[p.index].withOpacity(0.2)
+                            ? colors[p.index].withValues(alpha:0.2)
                             : AppColors.inputFill,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(

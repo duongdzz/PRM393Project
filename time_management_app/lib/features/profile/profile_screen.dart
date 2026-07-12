@@ -21,10 +21,11 @@ class ProfileScreen extends StatelessWidget {
               _buildHeader(),
               const SizedBox(height: 24),
 
-              _buildMenuItem(Icons.person_outline, 'Thông tin cá nhân', () {}),
-              _buildMenuItem(Icons.notifications_outlined, 'Thông báo', () {}),
-              _buildMenuItem(Icons.settings_outlined, 'Cài đặt', () {}),
-              _buildMenuItem(Icons.help_outline_rounded, 'Trợ giúp & Hỗ trợ', () {}),
+              _buildMenuItem(
+                Icons.info_outline_rounded,
+                'Giới thiệu & Trợ giúp',
+                () => _showAboutDialog(),
+              ),
 
               const SizedBox(height: 24),
               _buildLogoutButton(),
@@ -49,7 +50,7 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha:0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -111,7 +112,7 @@ class ProfileScreen extends StatelessWidget {
         leading: Container(
           width: 40, height: 40,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.12),
+            color: AppColors.primary.withValues(alpha:0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -124,6 +125,58 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // ── Logout ────────────────────────────────────────────────────────────────────
+  void _showAboutDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.timer_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('TimeWise'),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Ứng dụng quản lý thời gian cá nhân — đồ án PRM393.',
+                style: TextStyle(color: AppColors.onSurface, fontSize: 14),
+              ),
+              SizedBox(height: 12),
+              Text('Hướng dẫn nhanh',
+                  style: TextStyle(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  )),
+              SizedBox(height: 6),
+              Text(
+                '• Nhấn + để thêm công việc\n'
+                '• Tab Pomodoro → Chọn task Focus hôm nay\n'
+                '• Pomodoro tự chuyển task theo danh sách ưu tiên\n'
+                '• Có thông báo khi hết giờ (kể cả tắt màn hình)\n'
+                '• Nhấn vòng tròn để đánh dấu hoàn thành\n'
+                '• Giữ lâu công việc để xóa',
+                style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13, height: 1.5),
+              ),
+              SizedBox(height: 12),
+              Text('Phiên bản 1.0.0',
+                  style: TextStyle(color: AppColors.tertiary, fontSize: 12)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLogoutButton() {
     return GestureDetector(
       onTap: () async {
@@ -133,9 +186,9 @@ class ProfileScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.1),
+          color: AppColors.error.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+          border: Border.all(color: AppColors.error.withValues(alpha:0.3)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,

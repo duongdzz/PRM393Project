@@ -3,11 +3,8 @@ import 'package:flutter/material.dart';
 abstract class AppColors {
   // ── Brand palette (Sky blue, light & cool) ──────────────────────────────────
   static const primary     = Color(0xFF2BAEE6);   // sky blue
-  static const primaryDark  = Color(0xFF1B8FC4);   // deeper sky (gradient end / pressed)
   static const skyLight     = Color(0xFF6FCCF1);   // light sky
-  static const secondary   = Color(0xFFD8EEFB);   // light blue container
   static const tertiary    = Color(0xFF93A8B8);   // muted text / icon
-  static const neutral     = Color(0xFFFFFFFF);
 
   // ── Surfaces & backgrounds (bright) ──────────────────────────────────────────
   static const background       = Color(0xFFEAF2FB);   // app background (cool off-white blue)
@@ -38,21 +35,6 @@ abstract class AppColors {
 }
 
 abstract class AppTextStyles {
-  static const displayLarge = TextStyle(
-    fontFamily: 'Roboto',
-    fontSize: 57, fontWeight: FontWeight.w400,
-    color: AppColors.onSurface, letterSpacing: -0.25,
-  );
-  static const headlineLarge = TextStyle(
-    fontFamily: 'Roboto',
-    fontSize: 32, fontWeight: FontWeight.w700,
-    color: AppColors.onSurface,
-  );
-  static const headlineMedium = TextStyle(
-    fontFamily: 'Roboto',
-    fontSize: 24, fontWeight: FontWeight.w600,
-    color: AppColors.onSurface,
-  );
   static const titleLarge = TextStyle(
     fontFamily: 'Roboto',
     fontSize: 22, fontWeight: FontWeight.w600,
@@ -62,11 +44,6 @@ abstract class AppTextStyles {
     fontFamily: 'Roboto',
     fontSize: 16, fontWeight: FontWeight.w600,
     color: AppColors.onSurface, letterSpacing: 0.15,
-  );
-  static const bodyLarge = TextStyle(
-    fontFamily: 'Roboto',
-    fontSize: 16, fontWeight: FontWeight.w400,
-    color: AppColors.onSurface,
   );
   static const bodyMedium = TextStyle(
     fontFamily: 'Roboto',
@@ -158,7 +135,4 @@ class AppTheme {
       elevation: 2,
     ),
   );
-
-  /// Giữ alias cũ để không vỡ chỗ tham chiếu AppTheme.dark.
-  static ThemeData get dark => light;
 }

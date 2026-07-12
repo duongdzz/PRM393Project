@@ -96,15 +96,6 @@ class LoginController extends GetxController {
     );
   }
 
-
-  Future<void> signInWithEmailAndPassword(String email, String password) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-    } catch (e) {
-      errorMessage.value = 'Đăng nhập thất bại. Vui lòng thử lại.';
-    }
-  }
   Future<void> _initializeGoogleSignIn() async {
     if (_googleSignInInitialized) return;
 

@@ -8,6 +8,7 @@ import '../statistics/statistics_screen.dart';
 import '../profile/profile_screen.dart';
 import '../tasks/task_controller.dart';
 import '../tasks/widgets/add_task_sheet.dart';
+import '../pomodoro/pomodoro_controller.dart';
 import '../../services/auth_service.dart';
 import '../../shared/theme/app_theme.dart';
 
@@ -18,22 +19,23 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
     Get.put(TaskController());
+    Get.put(PomodoroController());
 
-    return Obx(() => Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.background,
 
       // ── AppBar ──────────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: Text(
+        title: Obx(() => Text(
           _getTitle(controller.currentIndex.value),
           style: const TextStyle(
             color: AppColors.onSurface,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
-        ),
+        )),
         actions: [
           // Avatar người dùng
           Padding(
@@ -65,31 +67,40 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
 
-      // ── Body: 5 tab content ─────────────────────────────────────────────────
-      body: IndexedStack(
-        index: controller.currentIndex.value,
-        children: const [
-          DashboardScreen(),
-          PomodoroScreen(),
-          CalendarScreen(),
-          StatisticsScreen(),
-          ProfileScreen(),
-        ],
-      ),
+      // ── Body: chỉ build tab đang hiển thị (tránh rebuild ngầm khi gõ phím) ──
+      body: Obx(() => _buildTab(controller.currentIndex.value)),
 
       // ── Nút + thêm công việc (ẩn ở tab Pomodoro & Hồ sơ) ─────────────────────
-      floatingActionButton: (controller.currentIndex.value == 1 ||
-              controller.currentIndex.value == 4)
-          ? null
-          : FloatingActionButton(
-              onPressed: () => showAddTaskSheet(context, Get.find<TaskController>()),
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-            ),
+      floatingActionButton: Obx(() {
+        final index = controller.currentIndex.value;
+        if (index == 1 || index == 4) return const SizedBox.shrink();
+        return FloatingActionButton(
+          onPressed: () => showAddTaskSheet(context, Get.find<TaskController>()),
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+        );
+      }),
 
       // ── Bottom Navigation Bar ───────────────────────────────────────────────
-      bottomNavigationBar: _buildBottomNav(controller),
-    ));
+      bottomNavigationBar: Obx(() => _buildBottomNav(controller)),
+    );
+  }
+
+  Widget _buildTab(int index) {
+    switch (index) {
+      case 0:
+        return const DashboardScreen();
+      case 1:
+        return const PomodoroScreen();
+      case 2:
+        return const CalendarScreen();
+      case 3:
+        return const StatisticsScreen();
+      case 4:
+        return const ProfileScreen();
+      default:
+        return const DashboardScreen();
+    }
   }
 
   String _getTitle(int index) {
@@ -110,7 +121,7 @@ class HomeScreen extends StatelessWidget {
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.10),
+            color: AppColors.primary.withValues(alpha:0.10),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),

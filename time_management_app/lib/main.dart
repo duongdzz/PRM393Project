@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'routes/app_routes.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
+import 'services/notification_service.dart';
 import 'shared/theme/app_theme.dart';
 
 Future<void> main() async {
@@ -14,6 +15,7 @@ Future<void> main() async {
   ]);
   await Get.putAsync<AuthService>(() => AuthService().init());
   await Get.putAsync<ApiService>(() => ApiService().init());
+  await Get.putAsync<NotificationService>(() => NotificationService().init());
   runApp(const TimeWiseApp());
 }
 

@@ -1,95 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../models/task_model.dart';
+import '../../data/task_repository.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
-import '../../services/task_repository.dart';
-
-enum TaskStatus   { todo, inProgress, done, cancelled }
-enum TaskPriority { low, medium, high, urgent }
-
-/// Kiểu lặp lại — trọng tâm app là công việc lặp đi lặp lại.
-enum RecurrenceType { once, daily, weekdays, weekly, monthly }
-
-extension RecurrenceTypeX on RecurrenceType {
-  String get label {
-    switch (this) {
-      case RecurrenceType.once:      return 'Một lần';
-      case RecurrenceType.daily:     return 'Hàng ngày';
-      case RecurrenceType.weekdays:  return 'T2–T6';
-      case RecurrenceType.weekly:    return 'Hàng tuần';
-      case RecurrenceType.monthly:   return 'Hàng tháng';
-    }
-  }
-}
-
-DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-String dateKey(DateTime d) => '${d.year}-${d.month}-${d.day}';
-bool isSameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
-
-String formatDuration(int minutes) {
-  if (minutes <= 0) return '0p';
-  final h = minutes ~/ 60;
-  final m = minutes % 60;
-  if (h == 0) return '${m}p';
-  if (m == 0) return '${h}h';
-  return '${h}h${m}p';
-}
-
-class TaskModel {
-  final String id;
-  String title;
-  String description;
-  TaskStatus   status;
-  TaskPriority priority;
-  RecurrenceType recurrence;
-  DateTime? deadline;      // chỉ dùng cho việc một lần
-  DateTime? startDate;     // ngày bắt đầu lặp
-  List<int> weekDays;      // 1=T2 … 7=CN, dùng khi recurrence == weekly
-  final Set<String> completedDates;
-  DateTime  createdAt;
-  DateTime  updatedAt;
-  List<SubTask> subTasks;
-
-  TaskModel({
-    required this.id,
-    required this.title,
-    this.description     = '',
-    this.status          = TaskStatus.todo,
-    this.priority        = TaskPriority.medium,
-    this.recurrence      = RecurrenceType.daily,
-    this.deadline,
-    this.startDate,
-    this.weekDays        = const [],
-    Set<String>? completedDates,
-    required this.createdAt,
-    required this.updatedAt,
-    this.subTasks         = const [],
-  }) : completedDates = completedDates ?? {};
-
-  bool get isRecurring => recurrence != RecurrenceType.once;
-
-  bool get isOverdue =>
-      recurrence == RecurrenceType.once &&
-      deadline != null &&
-      deadline!.isBefore(DateTime.now()) &&
-      status != TaskStatus.done &&
-      status != TaskStatus.cancelled;
-
-  bool get canMarkDone => subTasks.every((s) => s.isDone);
-}
-
-class SubTask {
-  final String id;
-  String title;
-  bool isDone;
-
-  SubTask({required this.id, required this.title, this.isDone = false});
-}
+import '../../shared/theme/app_theme.dart';
 
 class TaskController extends GetxController {
   final tasks = <TaskModel>[].obs;
-  final isLoading = false.obs;
 
   @override
   void onInit() {
@@ -101,14 +19,11 @@ class TaskController extends GetxController {
     if (!AuthService.to.useApi) return;
 
     try {
-      isLoading.value = true;
       tasks.assignAll(await TaskRepository.to.fetchAll());
     } on ApiException catch (e) {
       Get.snackbar('Lỗi', e.message,
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16));
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -209,5 +124,79 @@ class TaskController extends GetxController {
     } on ApiException catch (e) {
       return e.message;
     }
+  }
+
+  Future<void> markDoneWithFeedback(String taskId, {DateTime? onDate}) async {
+    final error = await tryMarkDone(taskId, onDate: onDate);
+    if (error != null) {
+      Get.snackbar(
+        'Không thể hoàn thành',
+        error,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.onSurface,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    }
+  }
+
+  Future<String?> deleteTask(String taskId) async {
+    if (!AuthService.to.useApi) {
+      tasks.removeWhere((t) => t.id == taskId);
+      return null;
+    }
+
+    try {
+      await TaskRepository.to.delete(taskId);
+      tasks.removeWhere((t) => t.id == taskId);
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    }
+  }
+
+  Future<void> deleteWithFeedback(String taskId, String taskTitle) async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Xóa công việc'),
+        content: Text('Bạn có chắc muốn xóa "$taskTitle"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Xóa', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final error = await deleteTask(taskId);
+    if (error != null) {
+      Get.snackbar(
+        'Không thể xóa',
+        error,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.onSurface,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+      return;
+    }
+
+    Get.snackbar(
+      'Đã xóa',
+      taskTitle,
+      backgroundColor: AppColors.surface,
+      colorText: AppColors.onSurface,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+    );
   }
 }

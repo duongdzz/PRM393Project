@@ -85,7 +85,7 @@ class LoginScreen extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.35),
+                color: AppColors.primary.withValues(alpha:0.35),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -167,7 +167,7 @@ class LoginScreen extends StatelessWidget {
               ? []
               : [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.12),
+              color: AppColors.primary.withValues(alpha:0.12),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -234,9 +234,9 @@ class LoginScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        border: Border.all(color: Colors.red.withValues(alpha:0.3)),
       ),
       child: Row(
         children: [
@@ -275,13 +275,13 @@ class _LoginBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    paint.color = AppColors.primary.withOpacity(0.10);
+    paint.color = AppColors.primary.withValues(alpha:0.10);
     canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.12), 160, paint);
 
-    paint.color = AppColors.skyLight.withOpacity(0.12);
+    paint.color = AppColors.skyLight.withValues(alpha:0.12);
     canvas.drawCircle(Offset(size.width * 0.1, size.height * 0.75), 130, paint);
 
-    paint.color = AppColors.primary.withOpacity(0.06);
+    paint.color = AppColors.primary.withValues(alpha:0.06);
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.95), 100, paint);
   }
 
