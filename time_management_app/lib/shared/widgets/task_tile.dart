@@ -11,6 +11,9 @@ class TaskTile extends StatelessWidget {
   final String subtitle;
   final Color backgroundColor;
 
+  static String _displayDescription(String raw) =>
+      raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+
   const TaskTile({
     super.key,
     required this.task,
@@ -60,6 +63,8 @@ class TaskTile extends StatelessWidget {
                   children: [
                     Text(
                       liveTask.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isDone ? AppColors.tertiary : AppColors.onSurface,
                         fontSize: 14,
@@ -70,8 +75,8 @@ class TaskTile extends StatelessWidget {
                     if (liveTask.description.trim().isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
-                        liveTask.description.trim(),
-                        maxLines: 1,
+                        _displayDescription(liveTask.description),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: isDone
